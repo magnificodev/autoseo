@@ -9,11 +9,14 @@ export function middleware(req: NextRequest) {
     url.pathname = '/login';
     return NextResponse.redirect(url);
   }
+  // If already authenticated, prevent visiting /login again
+  if (pathname.startsWith('/login') && token) {
+    url.pathname = '/sites';
+    return NextResponse.redirect(url);
+  }
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/sites/:path*', '/content/:path*'],
+  matcher: ['/sites/:path*', '/content/:path*', '/login'],
 };
-
-
