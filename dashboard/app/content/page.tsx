@@ -16,6 +16,7 @@ export default function ContentPage() {
     });
     const [error, setError] = useState<string | null>(null);
     const [publishMsg, setPublishMsg] = useState<string | null>(null);
+    const [publishStatus, setPublishStatus] = useState<'draft' | 'publish'>('draft');
 
     async function load() {
         try {
@@ -55,7 +56,7 @@ export default function ContentPage() {
                         site_id: content.site_id,
                         title: content.title,
                         body: content.body || '',
-                        status: 'draft',
+                        status: publishStatus,
                     }),
                 }
             );
@@ -90,6 +91,15 @@ export default function ContentPage() {
                 {error && <p style={{ color: 'red' }}>{error}</p>}
             </form>
             <h2 style={{ marginTop: 24 }}>List</h2>
+            <div style={{ marginBottom: 12 }}>
+                <label>
+                    Publish status:&nbsp;
+                    <select value={publishStatus} onChange={(e) => setPublishStatus(e.target.value as 'draft' | 'publish')}>
+                        <option value="draft">draft</option>
+                        <option value="publish">publish</option>
+                    </select>
+                </label>
+            </div>
             {publishMsg && <p style={{ color: 'green' }}>{publishMsg}</p>}
             <ul>
                 {items.map((c, i) => (
