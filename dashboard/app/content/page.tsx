@@ -15,6 +15,7 @@ export default function ContentPage() {
         status: 'pending',
     });
     const [error, setError] = useState<string | null>(null);
+    const [publishMsg, setPublishMsg] = useState<string | null>(null);
 
     async function load() {
         try {
@@ -32,10 +33,34 @@ export default function ContentPage() {
     async function createContent(e: React.FormEvent) {
         e.preventDefault();
         setError(null);
+        setPublishMsg(null);
         try {
             await apiFetch<Content>('/content/', { method: 'POST', body: JSON.stringify(form) });
             await load();
             setForm({ site_id: 1, title: '', body: '', status: 'pending' });
+        } catch (e: any) {
+            setError(e.message);
+        }
+    }
+
+    async function publish(content: Content) {
+        setError(null);
+        setPublishMsg(null);
+        try {
+            const res = await apiFetch<{ ok: boolean; post_id?: number; link?: string; raw?: any }>(
+                '/content/publish',
+                {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        site_id: content.site_id,
+                        title: content.title,
+                        body: content.body || '',
+                        status: 'draft',
+                    }),
+                }
+            );
+            if (res.ok && res.link) setPublishMsg(`Published: ${res.link}`);
+            else setPublishMsg('Published (no link returned).');
         } catch (e: any) {
             setError(e.message);
         }
@@ -65,10 +90,16 @@ export default function ContentPage() {
                 {error && <p style={{ color: 'red' }}>{error}</p>}
             </form>
             <h2 style={{ marginTop: 24 }}>List</h2>
+            {publishMsg && <p style={{ color: 'green' }}>{publishMsg}</p>}
             <ul>
                 {items.map((c, i) => (
-                    <li key={i}>
-                        [{c.site_id}] {c.title} – {c.status || 'pending'}
+                    <li key={i} style={{ marginBottom: 8 }}>
+                        <div>
+                            <div>
+                                [{c.site_id}] {c.title} – {c.status || 'pending'}
+                            </div>
+                            <button onClick={() => publish(c)}>Publish to WP (draft)</button>
+                        </div>
                     </li>
                 ))}
             </ul>
