@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from src.api.deps.auth import get_current_user, get_db
 from src.database.models import Site
+from src.core.wordpress_client import WordPressClient, WordPressCredentials
 
 
 class SiteIn(BaseModel):
@@ -34,5 +35,17 @@ def create_site(body: SiteIn, db: Session = Depends(get_db), user=Depends(get_cu
     db.commit()
     db.refresh(site)
     return body
+
+
+@router.post("/test-connection")
+def test_connection(body: SiteIn, user=Depends(get_current_user)):
+    creds = WordPressCredentials(
+        base_url=body.wp_url,
+        username=body.wp_username,
+        password=body.wp_password_enc,
+    )
+    client = WordPressClient(creds)
+    ok = client.test_connection()
+    return {"ok": ok}
 
 

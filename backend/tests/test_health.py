@@ -3,4 +3,3 @@ def test_health(client):
     assert r.status_code == 200
     data = r.json()
     assert data.get("status") == "ok"
-

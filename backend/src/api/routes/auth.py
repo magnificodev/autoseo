@@ -4,13 +4,11 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from jose import JWTError, jwt
+from jose import jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
-
-from src.database.models import User, Base
+from src.database.models import Base, User
 from src.database.session import SessionLocal, engine
-
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -68,19 +66,27 @@ def register(email: str, password: str, db: Session = Depends(get_db)):
 
 
 @router.post("/login")
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login(
+    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+):
     user = db.query(User).filter(User.email == form_data.username).first()
     if not user or not verify_password(form_data.password, user.password_hash):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sai thông tin đăng nhập")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Sai thông tin đăng nhập"
+        )
     token = create_access_token({"sub": str(user.id)})
     return {"access_token": token, "token_type": "bearer"}
 
 
 @router.post("/login-cookie")
-def login_cookie(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login_cookie(
+    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+):
     user = db.query(User).filter(User.email == form_data.username).first()
     if not user or not verify_password(form_data.password, user.password_hash):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sai thông tin đăng nhập")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Sai thông tin đăng nhập"
+        )
     token = create_access_token({"sub": str(user.id)})
     from fastapi import Response
 
@@ -105,5 +111,3 @@ def logout():
     resp = Response(content="ok", media_type="text/plain")
     resp.delete_cookie("token", path="/")
     return resp
-
-

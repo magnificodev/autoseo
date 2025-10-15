@@ -1,10 +1,11 @@
 import os
+import sys
 import tempfile
 
 import pytest
 from fastapi.testclient import TestClient
-import sys
-sys.path.insert(0, str(__file__).rsplit('/tests/', 1)[0])
+
+sys.path.insert(0, str(__file__).rsplit("/tests/", 1)[0])
 
 os.environ.setdefault(
     "DATABASE_URL", "sqlite:///" + tempfile.gettempdir() + "/autoseo_test.db"

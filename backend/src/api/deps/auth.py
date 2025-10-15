@@ -1,14 +1,11 @@
 import os
-from typing import Optional
 
-from fastapi import Depends, HTTPException, status, Request
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
-
 from src.database.models import User
 from src.database.session import SessionLocal
-
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 JWT_SECRET = os.getenv("JWT_SECRET", "change-me")
@@ -32,7 +29,11 @@ def _decode_token(token: str) -> str | None:
         return None
 
 
-def get_current_user(request: Request, token: str | None = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
+def get_current_user(
+    request: Request,
+    token: str | None = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Không thể xác thực",
@@ -50,5 +51,3 @@ def get_current_user(request: Request, token: str | None = Depends(oauth2_scheme
     if user is None:
         raise credentials_exception
     return user
-
-
