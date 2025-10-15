@@ -4,6 +4,9 @@ from sqlalchemy.orm import sessionmaker
 
 
 def get_database_url() -> str:
+    override = os.getenv("DATABASE_URL")
+    if override:
+        return override
     user = os.getenv("POSTGRES_USER", "autoseo")
     pwd = os.getenv("POSTGRES_PASSWORD", "autoseo")
     db = os.getenv("POSTGRES_DB", "autoseo")
