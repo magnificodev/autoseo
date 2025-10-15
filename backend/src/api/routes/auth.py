@@ -15,11 +15,7 @@ from src.database.session import SessionLocal, engine
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
-pwd_context = CryptContext(
-    schemes=["bcrypt"],
-    deprecated="auto",
-    bcrypt__truncate_error=False,
-)
+pwd_context = CryptContext(schemes=["bcrypt_sha256"], deprecated="auto")
 
 JWT_SECRET = os.getenv("JWT_SECRET", "change-me")
 JWT_ALG = "HS256"
@@ -35,13 +31,6 @@ def get_db():
 
 
 def hash_password(password: str) -> str:
-    # Bcrypt chỉ xử lý tối đa 72 bytes; cắt bớt nếu vượt quá
-    try:
-        raw = password.encode("utf-8")
-        if len(raw) > 72:
-            password = raw[:72].decode("utf-8", errors="ignore")
-    except Exception:
-        pass
     return pwd_context.hash(password)
 
 
