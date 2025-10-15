@@ -55,11 +55,16 @@ def register(email: str, password: str, db: Session = Depends(get_db)):
         pass
     if db.query(User).filter(User.email == email).first():
         raise HTTPException(status_code=400, detail="Email đã tồn tại")
-    user = User(email=email, password_hash=hash_password(password))
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return {"id": user.id, "email": user.email}
+    try:
+        user = User(email=email, password_hash=hash_password(password))
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        return {"id": user.id, "email": user.email}
+    except Exception as e:
+        db.rollback()
+        # Trả lỗi chi tiết để chẩn đoán trên staging (tạm thời)
+        raise HTTPException(status_code=500, detail=f"register_failed: {e}")
 
 
 @router.post("/login")
