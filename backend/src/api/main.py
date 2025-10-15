@@ -6,6 +6,9 @@ from sqlalchemy.exc import OperationalError
 
 from src.database.models import Base
 from src.database.session import engine
+from src.api.routes import auth as auth_router
+from src.api.middleware.rate_limit import limiter
+from slowapi.middleware import SlowAPIMiddleware
 
 
 def create_app() -> FastAPI:
@@ -19,6 +22,11 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    app.state.limiter = limiter
+    app.add_middleware(SlowAPIMiddleware)
+
+    app.include_router(auth_router.router)
 
     @app.get("/health")
     def health():
