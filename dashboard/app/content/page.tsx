@@ -17,7 +17,6 @@ export default function ContentPage() {
     });
     const [error, setError] = useState<string | null>(null);
     const [publishMsg, setPublishMsg] = useState<string | null>(null);
-    const [publishStatus, setPublishStatus] = useState<'draft' | 'publish'>('draft');
     const [lastChecklist, setLastChecklist] = useState<Checklist | null>(null);
     const [checking, setChecking] = useState(false);
 
@@ -53,14 +52,15 @@ export default function ContentPage() {
         try {
             // run checklist before publish
             setChecking(true);
-            const report = await apiFetch<Checklist>(
-                '/content/checklist',
-                { method: 'POST', body: JSON.stringify({ title: content.title, body: content.body || '' }) }
-            );
+            const report = await apiFetch<Checklist>('/content/checklist', {
+                method: 'POST',
+                body: JSON.stringify({ title: content.title, body: content.body || '' }),
+            });
             setLastChecklist(report);
             setChecking(false);
             if (!report.passed) {
-                setError(`Checklist failed (score ${report.score}). Issues: ${report.issues.join(', ')}`);
+                // Show detailed panel only; avoid duplicate error banner
+                setPublishMsg(null);
                 return;
             }
             const res = await apiFetch<{ ok: boolean; post_id?: number; link?: string; raw?: any }>(
@@ -71,7 +71,7 @@ export default function ContentPage() {
                         site_id: content.site_id,
                         title: content.title,
                         body: content.body || '',
-                        status: publishStatus,
+                        status: 'draft',
                     }),
                 }
             );
@@ -108,27 +108,21 @@ export default function ContentPage() {
                 {error && <p style={{ color: 'red' }}>{error}</p>}
             </form>
             <h2 style={{ marginTop: 24 }}>List</h2>
-            <div style={{ marginBottom: 12 }}>
-                <label>
-                    Publish status:&nbsp;
-                    <select
-                        value={publishStatus}
-                        onChange={(e) => setPublishStatus(e.target.value as 'draft' | 'publish')}
-                    >
-                        <option value="draft">draft</option>
-                        <option value="publish">publish</option>
-                    </select>
-                </label>
-            </div>
+            {/* Publish status removed for now; defaulting to draft */}
             {publishMsg && <p style={{ color: 'green' }}>{publishMsg}</p>}
             {lastChecklist && (
                 <div style={{ border: '1px solid #ddd', padding: 8, marginBottom: 12 }}>
-                    <strong>Checklist:</strong> {lastChecklist.passed ? 'Passed' : 'Failed'} (score {lastChecklist.score})
+                    <strong>Checklist:</strong> {lastChecklist.passed ? 'Passed' : 'Failed'} (score{' '}
+                    {lastChecklist.score})
                     {lastChecklist.issues.length > 0 && (
-                        <div style={{ color: 'red' }}>Issues: {lastChecklist.issues.join(', ')}</div>
+                        <div style={{ color: 'red' }}>
+                            Issues: {lastChecklist.issues.join(', ')}
+                        </div>
                     )}
                     {lastChecklist.warnings.length > 0 && (
-                        <div style={{ color: '#a60' }}>Warnings: {lastChecklist.warnings.join(', ')}</div>
+                        <div style={{ color: '#a60' }}>
+                            Warnings: {lastChecklist.warnings.join(', ')}
+                        </div>
                     )}
                 </div>
             )}
