@@ -32,6 +32,30 @@ services:
             - postgres
             - redis
 
+    worker:
+        build:
+            context: .
+            dockerfile: backend/Dockerfile
+        command: celery -A src.scheduler.celery_app.app worker --loglevel=INFO
+        environment:
+            CELERY_BROKER_URL: redis://redis:6379/0
+            CELERY_RESULT_BACKEND: redis://redis:6379/1
+            BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:3000}
+        depends_on:
+            - backend
+            - redis
+
+    beat:
+        build:
+            context: .
+            dockerfile: backend/Dockerfile
+        command: celery -A src.scheduler.celery_app.app beat --loglevel=INFO
+        environment:
+            CELERY_BROKER_URL: redis://redis:6379/0
+            CELERY_RESULT_BACKEND: redis://redis:6379/1
+        depends_on:
+            - worker
+
     dashboard:
         build:
             context: .
