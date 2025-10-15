@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 
 type Content = { site_id: number; title: string; body?: string | null; status?: string };
+type Checklist = { passed: boolean; score: number; issues: string[]; warnings: string[] };
 
 export default function ContentPage() {
     const router = useRouter();
@@ -17,6 +18,8 @@ export default function ContentPage() {
     const [error, setError] = useState<string | null>(null);
     const [publishMsg, setPublishMsg] = useState<string | null>(null);
     const [publishStatus, setPublishStatus] = useState<'draft' | 'publish'>('draft');
+    const [lastChecklist, setLastChecklist] = useState<Checklist | null>(null);
+    const [checking, setChecking] = useState(false);
 
     async function load() {
         try {
@@ -48,6 +51,18 @@ export default function ContentPage() {
         setError(null);
         setPublishMsg(null);
         try {
+            // run checklist before publish
+            setChecking(true);
+            const report = await apiFetch<Checklist>(
+                '/content/checklist',
+                { method: 'POST', body: JSON.stringify({ title: content.title, body: content.body || '' }) }
+            );
+            setLastChecklist(report);
+            setChecking(false);
+            if (!report.passed) {
+                setError(`Checklist failed (score ${report.score}). Issues: ${report.issues.join(', ')}`);
+                return;
+            }
             const res = await apiFetch<{ ok: boolean; post_id?: number; link?: string; raw?: any }>(
                 '/content/publish',
                 {
@@ -64,6 +79,8 @@ export default function ContentPage() {
             else setPublishMsg('Published (no link returned).');
         } catch (e: any) {
             setError(e.message);
+        } finally {
+            setChecking(false);
         }
     }
 
@@ -94,13 +111,27 @@ export default function ContentPage() {
             <div style={{ marginBottom: 12 }}>
                 <label>
                     Publish status:&nbsp;
-                    <select value={publishStatus} onChange={(e) => setPublishStatus(e.target.value as 'draft' | 'publish')}>
+                    <select
+                        value={publishStatus}
+                        onChange={(e) => setPublishStatus(e.target.value as 'draft' | 'publish')}
+                    >
                         <option value="draft">draft</option>
                         <option value="publish">publish</option>
                     </select>
                 </label>
             </div>
             {publishMsg && <p style={{ color: 'green' }}>{publishMsg}</p>}
+            {lastChecklist && (
+                <div style={{ border: '1px solid #ddd', padding: 8, marginBottom: 12 }}>
+                    <strong>Checklist:</strong> {lastChecklist.passed ? 'Passed' : 'Failed'} (score {lastChecklist.score})
+                    {lastChecklist.issues.length > 0 && (
+                        <div style={{ color: 'red' }}>Issues: {lastChecklist.issues.join(', ')}</div>
+                    )}
+                    {lastChecklist.warnings.length > 0 && (
+                        <div style={{ color: '#a60' }}>Warnings: {lastChecklist.warnings.join(', ')}</div>
+                    )}
+                </div>
+            )}
             <ul>
                 {items.map((c, i) => (
                     <li key={i} style={{ marginBottom: 8 }}>
@@ -108,7 +139,9 @@ export default function ContentPage() {
                             <div>
                                 [{c.site_id}] {c.title} – {c.status || 'pending'}
                             </div>
-                            <button onClick={() => publish(c)}>Publish to WP (draft)</button>
+                            <button disabled={checking} onClick={() => publish(c)}>
+                                {checking ? 'Checking...' : 'Publish to WP'}
+                            </button>
                         </div>
                     </li>
                 ))}
