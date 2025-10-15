@@ -9,6 +9,9 @@ from src.database.session import engine
 from src.api.routes import auth as auth_router
 from src.api.middleware.rate_limit import limiter
 from slowapi.middleware import SlowAPIMiddleware
+from src.api.routes import sites as sites_router
+from src.api.routes import keywords as keywords_router
+from src.api.routes import content as content_router
 
 
 def create_app() -> FastAPI:
@@ -36,6 +39,9 @@ def create_app() -> FastAPI:
             pass
 
     app.include_router(auth_router.router)
+    app.include_router(sites_router.router)
+    app.include_router(keywords_router.router)
+    app.include_router(content_router.router)
 
     @app.get("/health")
     def health():
