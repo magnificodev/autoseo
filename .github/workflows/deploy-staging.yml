@@ -1,4 +1,4 @@
-name: Deploy Staging (Server 40.82.144.18)
+name: CD (Staging 40.82.144.18)
 
 on:
     workflow_dispatch:
