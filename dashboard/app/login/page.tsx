@@ -13,14 +13,13 @@ export default function LoginPage() {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch(`${API_PREFIX}/auth/login`, {
+            const res = await fetch(`${API_PREFIX}/auth/login-cookie`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({ username: email, password }).toString(),
+                credentials: 'include',
             });
             if (!res.ok) throw new Error(await res.text());
-            const data = await res.json();
-            localStorage.setItem('token', data.access_token);
             window.location.href = '/sites';
         } catch (err: any) {
             setError(err.message || 'Login failed');

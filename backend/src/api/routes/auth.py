@@ -76,3 +76,34 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     return {"access_token": token, "token_type": "bearer"}
 
 
+@router.post("/login-cookie")
+def login_cookie(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == form_data.username).first()
+    if not user or not verify_password(form_data.password, user.password_hash):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sai thông tin đăng nhập")
+    token = create_access_token({"sub": str(user.id)})
+    from fastapi import Response
+
+    resp = Response(content="ok", media_type="text/plain")
+    cookie_secure = os.getenv("COOKIE_SECURE", "false").lower() == "true"
+    resp.set_cookie(
+        key="token",
+        value=token,
+        httponly=True,
+        secure=cookie_secure,
+        samesite="lax",
+        max_age=JWT_EXPIRE_MIN * 60,
+        path="/",
+    )
+    return resp
+
+
+@router.post("/logout")
+def logout():
+    from fastapi import Response
+
+    resp = Response(content="ok", media_type="text/plain")
+    resp.delete_cookie("token", path="/")
+    return resp
+
+

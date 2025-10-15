@@ -1,7 +1,7 @@
 'use client';
 import { apiFetch } from '@/lib/api';
-import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
 
 type Site = { name: string; wp_url: string; wp_username: string; wp_password_enc: string };
 
@@ -17,11 +17,6 @@ export default function SitesPage() {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-        if (!token) {
-            router.replace('/login');
-            return;
-        }
         apiFetch<Site[]>('/sites/')
             .then(setItems)
             .catch((e) => setError(e.message));

@@ -1,7 +1,7 @@
 'use client';
 import { apiFetch } from '@/lib/api';
-import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
 
 type Content = { site_id: number; title: string; body?: string | null; status?: string };
 
@@ -26,11 +26,6 @@ export default function ContentPage() {
     }
 
     useEffect(() => {
-        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-        if (!token) {
-            router.replace('/login');
-            return;
-        }
         load();
     }, [router]);
 
