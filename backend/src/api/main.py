@@ -2,6 +2,10 @@ import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.exc import OperationalError
+
+from src.database.models import Base
+from src.database.session import engine
 
 
 def create_app() -> FastAPI:
@@ -18,7 +22,12 @@ def create_app() -> FastAPI:
 
     @app.get("/health")
     def health():
-        return {"status": "ok"}
+        try:
+            Base.metadata.create_all(bind=engine)
+            db_status = "ok"
+        except OperationalError:
+            db_status = "degraded"
+        return {"status": "ok", "db": db_status}
 
     return app
 
