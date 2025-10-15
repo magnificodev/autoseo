@@ -12,6 +12,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from src.api.routes import sites as sites_router
 from src.api.routes import keywords as keywords_router
 from src.api.routes import content as content_router
+from src.api.routes import scheduler as scheduler_router
 
 
 def create_app() -> FastAPI:
@@ -42,6 +43,7 @@ def create_app() -> FastAPI:
     app.include_router(sites_router.router)
     app.include_router(keywords_router.router)
     app.include_router(content_router.router)
+    app.include_router(scheduler_router.router)
 
     @app.get("/health")
     def health():
