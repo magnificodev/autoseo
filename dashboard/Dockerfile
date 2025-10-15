@@ -11,7 +11,8 @@ RUN npm run build || echo "skip build in phase 0"
 
 FROM node:20-alpine AS runner
 WORKDIR /app
-ENV NODE_ENV=production
+# Use development mode for Next.js dev server to avoid prerender-manifest issues
+ENV NODE_ENV=development
 COPY --from=builder /app .
 EXPOSE 3000
 CMD ["npm", "run", "dev"]
