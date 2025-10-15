@@ -8,8 +8,8 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
-from src.database.models import User
-from src.database.session import SessionLocal
+from src.database.models import User, Base
+from src.database.session import SessionLocal, engine
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -48,6 +48,11 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 @router.post("/register")
 def register(email: str, password: str, db: Session = Depends(get_db)):
+    # Đảm bảo bảng tồn tại trong trường hợp startup hook chưa chạy
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception:
+        pass
     if db.query(User).filter(User.email == email).first():
         raise HTTPException(status_code=400, detail="Email đã tồn tại")
     user = User(email=email, password_hash=hash_password(password))
