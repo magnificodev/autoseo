@@ -1,8 +1,11 @@
 from datetime import datetime
+import os
+
 from celery.schedules import crontab
-from .celery_app import app
+from src.database.models import ContentQueue, Site
 from src.database.session import SessionLocal
-from src.database.models import Site, ContentQueue
+
+from .celery_app import app
 
 
 @app.task
@@ -22,18 +25,21 @@ def generate_draft_for_site(site_id: int) -> int:
 
 
 def register_default_schedule():
-    # Example: run every hour for site id 1 (can be extended to per-site config)
-    app.conf.beat_schedule.update(
-        {
-            "generate-draft-site-1-hourly": {
+    # Build schedule dynamically from sites table where is_auto_enabled
+    db = SessionLocal()
+    try:
+        sites = db.query(Site).filter(Site.is_auto_enabled == True).all()  # noqa: E712
+        schedule = {}
+        for s in sites:
+            minute, hour, dom, month, dow = (s.schedule_cron or "0 * * * *").split()
+            schedule[f"auto-generate-site-{s.id}"] = {
                 "task": "src.scheduler.tasks.generate_draft_for_site",
-                "schedule": crontab(minute=0),
-                "args": (1,),
+                "schedule": crontab(minute=minute, hour=hour, day_of_month=dom, month_of_year=month, day_of_week=dow),
+                "args": (s.id,),
             }
-        }
-    )
+        app.conf.beat_schedule.update(schedule)
+    finally:
+        db.close()
 
 
 register_default_schedule()
-
-

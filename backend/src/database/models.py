@@ -25,6 +25,12 @@ class Site(Base):
     wp_username = Column(String(255), nullable=False)
     wp_password_enc = Column(String(500), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    # Auto generation config
+    is_auto_enabled = Column(Boolean, default=False)
+    schedule_cron = Column(String(64), default="0 * * * *")  # hourly by default
+    daily_quota = Column(Integer, default=5)
+    active_start_hour = Column(Integer, default=8)  # 24h
+    active_end_hour = Column(Integer, default=22)
 
 
 class Keyword(Base):
