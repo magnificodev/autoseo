@@ -1,0 +1,58 @@
+version: '3.9'
+services:
+    postgres:
+        image: postgres:15
+        environment:
+            POSTGRES_DB: ${POSTGRES_DB:-autoseo}
+            POSTGRES_USER: ${POSTGRES_USER:-autoseo}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-autoseo}
+        ports:
+            - '5432:5432'
+        healthcheck:
+            test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER']
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        volumes:
+            - pgdata:/var/lib/postgresql/data
+
+    redis:
+        image: redis:7-alpine
+        ports:
+            - '6379:6379'
+
+    backend:
+        build:
+            context: .
+            dockerfile: backend/Dockerfile
+        environment:
+            BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:3000}
+        ports:
+            - '8000:8000'
+        depends_on:
+            - postgres
+            - redis
+
+    dashboard:
+        build:
+            context: .
+            dockerfile: dashboard/Dockerfile
+        environment:
+            NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://localhost:8000}
+        ports:
+            - '3000:3000'
+        depends_on:
+            - backend
+
+    nginx:
+        image: nginx:1.25-alpine
+        ports:
+            - '80:80'
+        volumes:
+            - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+        depends_on:
+            - backend
+            - dashboard
+
+volumes:
+    pgdata:
