@@ -15,7 +15,7 @@ from src.database.session import SessionLocal, engine
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
-pwd_context = CryptContext(schemes=["bcrypt_sha256"], deprecated="auto")
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 JWT_SECRET = os.getenv("JWT_SECRET", "change-me")
 JWT_ALG = "HS256"
