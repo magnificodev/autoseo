@@ -1,5 +1,5 @@
 from datetime import datetime
-import os
+from sqlalchemy.exc import OperationalError
 
 from celery.schedules import crontab
 from src.database.models import ContentQueue, Site
@@ -31,15 +31,30 @@ def register_default_schedule():
         sites = db.query(Site).filter(Site.is_auto_enabled == True).all()  # noqa: E712
         schedule = {}
         for s in sites:
-            minute, hour, dom, month, dow = (s.schedule_cron or "0 * * * *").split()
+            try:
+                minute, hour, dom, month, dow = (s.schedule_cron or "0 * * * *").split()
+            except ValueError:
+                minute, hour, dom, month, dow = ("0", "*", "*", "*", "*")
             schedule[f"auto-generate-site-{s.id}"] = {
                 "task": "src.scheduler.tasks.generate_draft_for_site",
-                "schedule": crontab(minute=minute, hour=hour, day_of_month=dom, month_of_year=month, day_of_week=dow),
+                "schedule": crontab(
+                    minute=minute,
+                    hour=hour,
+                    day_of_month=dom,
+                    month_of_year=month,
+                    day_of_week=dow,
+                ),
                 "args": (s.id,),
             }
         app.conf.beat_schedule.update(schedule)
+    except OperationalError:
+        pass
     finally:
         db.close()
 
 
-register_default_schedule()
+try:
+    register_default_schedule()
+except Exception:
+    # Avoid import-time failures in environments where DB isn't ready (e.g. CI)
+    pass
