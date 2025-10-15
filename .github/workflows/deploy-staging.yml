@@ -72,3 +72,6 @@ jobs:
                       echo "Waiting for services..."
                       sleep 5
                       curl -sf http://localhost/health || curl -sf http://localhost:8000/health
+
+            # Alembic migrations
+            docker compose exec -T backend sh -lc "alembic upgrade head" || true
