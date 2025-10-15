@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from typing import Optional
 
 from src.api.deps.auth import get_current_user, get_db
 from src.database.models import ContentQueue
@@ -9,7 +10,7 @@ from src.database.models import ContentQueue
 class ContentIn(BaseModel):
     site_id: int
     title: str
-    body: str | None = None
+    body: Optional[str] = None
     status: str = "pending"
 
 
