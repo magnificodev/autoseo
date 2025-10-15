@@ -26,6 +26,15 @@ def create_app() -> FastAPI:
     app.state.limiter = limiter
     app.add_middleware(SlowAPIMiddleware)
 
+    @app.on_event("startup")
+    def _create_tables_on_startup() -> None:
+        # Khởi tạo bảng nếu chưa có (tạm thời cho Phase 1, sau sẽ dùng Alembic)
+        try:
+            Base.metadata.create_all(bind=engine)
+        except Exception:
+            # Không làm gián đoạn startup; /health sẽ phản ánh trạng thái DB
+            pass
+
     app.include_router(auth_router.router)
 
     @app.get("/health")
