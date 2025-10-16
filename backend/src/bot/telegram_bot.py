@@ -188,7 +188,10 @@ async def cmd_queue(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     except ValueError:
         await update.message.reply_text("Tham số không hợp lệ. Ví dụ: /queue 1 10")
         return
-    await _send_queue_page(update, site_id=site_id, offset=0, limit=limit, status=status)
+    chat = update.effective_chat
+    if not chat:
+        return
+    await _send_queue_page(context.bot, chat.id, site_id=site_id, offset=0, limit=limit, status=status)
 
 
 def _fetch_by_status(site_id: int, status: str, offset: int, limit: int) -> list[ContentQueue]:
@@ -207,12 +210,10 @@ def _fetch_by_status(site_id: int, status: str, offset: int, limit: int) -> list
         db.close()
 
 
-async def _send_queue_page(update: Update, site_id: int, offset: int, limit: int, status: str = "pending") -> None:
+async def _send_queue_page(bot, chat_id: int, site_id: int, offset: int, limit: int, status: str = "pending") -> None:
     rows = _fetch_by_status(site_id, status, offset, limit)
     if not rows:
-        await update.message.reply_text(
-            "ℹ️ <i>Không có mục chờ duyệt cho site này.</i>", parse_mode=ParseMode.HTML
-        )
+        await bot.send_message(chat_id, "ℹ️ <i>Không có mục phù hợp.</i>", parse_mode=ParseMode.HTML)
         return
     # Gửi danh sách + nút phân trang
     start = offset + 1
@@ -262,7 +263,8 @@ async def _send_queue_page(update: Update, site_id: int, offset: int, limit: int
             ),
         ],
     ]
-    await update.message.reply_text(
+    await bot.send_message(
+        chat_id,
         header,
         parse_mode=ParseMode.HTML,
         reply_markup=InlineKeyboardMarkup(header_rows),
@@ -286,9 +288,7 @@ async def _send_queue_page(update: Update, site_id: int, offset: int, limit: int
                 ),
             ]
         ]
-        await update.message.reply_text(
-            text, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(buttons)
-        )
+        await bot.send_message(chat_id, text, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(buttons))
 
 
 async def cmd_publish(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -505,7 +505,9 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             chat = update.effective_chat
             if chat:
                 # Gửi message mới, giữ nguyên thread
-                await _send_queue_page(update, site_id=site_id, offset=new_offset, limit=new_limit or 10, status=new_status)
+            chat = update.effective_chat
+            if chat:
+                await _send_queue_page(context.bot, chat.id, site_id=site_id, offset=new_offset, limit=new_limit or 10, status=new_status)
             return
 
         if action == "filter":
@@ -515,7 +517,9 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
                 await query.edit_message_text("❌ Tham số filter không hợp lệ.")
                 return
             await query.edit_message_text("🔄 Đang lọc...")
-            await _send_queue_page(update, site_id=site_id, offset=new_offset, limit=new_limit, status=new_status)
+            chat = update.effective_chat
+            if chat:
+                await _send_queue_page(context.bot, chat.id, site_id=site_id, offset=new_offset, limit=new_limit, status=new_status)
             return
 
         if action in {"bulk_approve", "bulk_reject_pick"}:
