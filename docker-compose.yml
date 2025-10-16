@@ -67,8 +67,12 @@ services:
             context: .
             dockerfile: backend/Dockerfile
         command: python -m src.bot.telegram_bot
+        env_file:
+            - .env
         environment:
             TELEGRAM_TOKEN: ${TELEGRAM_TOKEN:-}
+            TELEGRAM_OWNER_ID: ${TELEGRAM_OWNER_ID:-}
+            TELEGRAM_ADMINS: ${TELEGRAM_ADMINS:-}
         depends_on:
             backend:
                 condition: service_started
