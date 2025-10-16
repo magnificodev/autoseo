@@ -25,6 +25,27 @@ async def cmd_sites(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         db.close()
 
 
+async def cmd_approve(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    args = context.args if context.args else []
+    if len(args) < 1:
+        await update.message.reply_text("Cách dùng: /approve <content_id>")
+        return
+    content_id = args[0]
+    await update.message.reply_text(f"[STUB] Đã nhận yêu cầu duyệt content #{content_id}.")
+
+
+async def cmd_reject(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    args = context.args if context.args else []
+    if len(args) < 1:
+        await update.message.reply_text("Cách dùng: /reject <content_id> [lý_do]")
+        return
+    content_id = args[0]
+    reason = " ".join(args[1:]) if len(args) > 1 else "không nêu lý do"
+    await update.message.reply_text(
+        f"[STUB] Đã nhận yêu cầu từ chối content #{content_id} — lý do: {reason}."
+    )
+
+
 def build_app() -> Application:
     token = os.getenv("TELEGRAM_TOKEN")
     if not token:
@@ -32,6 +53,8 @@ def build_app() -> Application:
     app = Application.builder().token(token).build()
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("sites", cmd_sites))
+    app.add_handler(CommandHandler("approve", cmd_approve))
+    app.add_handler(CommandHandler("reject", cmd_reject))
     return app
 
 
