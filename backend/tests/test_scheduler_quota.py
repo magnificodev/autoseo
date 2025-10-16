@@ -5,7 +5,7 @@ from src.scheduler.tasks import generate_draft_for_site
 
 
 def setup_site(db, **overrides):
-    site = Site(
+    data = dict(
         name="s",
         wp_url="http://example.com",
         wp_username="u",
@@ -15,8 +15,9 @@ def setup_site(db, **overrides):
         daily_quota=2,
         active_start_hour=0,
         active_end_hour=24,
-        **overrides,
     )
+    data.update(overrides)
+    site = Site(**data)
     db.add(site)
     db.commit()
     db.refresh(site)
