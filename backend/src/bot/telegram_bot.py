@@ -499,6 +499,13 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             await query.edit_message_text("⏹ Đã hủy thao tác.", reply_markup=back)
             return
 
+        if action == "copy_myid":
+            # Simply re-send the ID in a code block so user can long-press to copy
+            await query.edit_message_text(
+                f"👤 <b>User ID</b>: <code>{content_id}</code>", parse_mode=ParseMode.HTML
+            )
+            return
+
         if action == "page":
             # callback for pagination from header: data format page:<site_id>:<offset>
             try:
@@ -829,7 +836,11 @@ async def cmd_myid(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if user is None:
         return
     await update.message.reply_text(
-        f"👤 <b>User ID</b>: <code>{user.id}</code>", parse_mode=ParseMode.HTML
+        f"👤 <b>User ID</b>: <code>{user.id}</code>",
+        parse_mode=ParseMode.HTML,
+        reply_markup=InlineKeyboardMarkup(
+            [[InlineKeyboardButton(text="Copy", callback_data=f"copy_myid:{user.id}")]]
+        ),
     )
 
 
