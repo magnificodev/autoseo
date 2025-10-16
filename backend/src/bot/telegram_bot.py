@@ -37,6 +37,13 @@ def build_app() -> Application:
 
 def main() -> None:
     app = build_app()
+    # Ensure bot is in polling mode (remove webhook if previously set)
+    async def _prepare():
+        try:
+            await app.bot.delete_webhook(drop_pending_updates=False)
+        except Exception:
+            pass
+    asyncio.get_event_loop().run_until_complete(_prepare())
     app.run_polling(close_loop=False)
 
 
