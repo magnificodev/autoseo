@@ -47,7 +47,7 @@ def get_current_user(
     user_id = _decode_token(raw_token)
     if not user_id:
         raise credentials_exception
-    user = db.query(User).get(int(user_id))
+    user = db.get(User, int(user_id))
     if user is None:
         raise credentials_exception
     return user

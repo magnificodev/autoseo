@@ -6,30 +6,10 @@ from src.database.models import ContentQueue, Site
 from src.database.session import SessionLocal
 
 from .celery_app import app
+from .utils import count_today_generated, is_within_active_hours
 
 
-def _is_within_active_hours(now_utc: datetime, start_hour: int, end_hour: int) -> bool:
-    # Treat configured hours as UTC to avoid server TZ ambiguity
-    current_hour = now_utc.hour
-    if start_hour == end_hour:
-        return True  # 24/7
-    if start_hour < end_hour:
-        return start_hour <= current_hour < end_hour
-    # Overnight window (e.g., 22 -> 6)
-    return current_hour >= start_hour or current_hour < end_hour
-
-
-def _count_today_generated(db, site_id: int) -> int:
-    # Count rows created today UTC
-    start_of_day = datetime.now(timezone.utc).replace(
-        hour=0, minute=0, second=0, microsecond=0
-    )
-    return (
-        db.query(ContentQueue)
-        .filter(ContentQueue.site_id == site_id)
-        .filter(ContentQueue.created_at >= start_of_day.replace(tzinfo=None))
-        .count()
-    )
+"""Scheduler helpers moved to utils module."""
 
 
 @app.task
@@ -41,12 +21,12 @@ def generate_draft_for_site(site_id: int) -> int:
             return 0
         # Enforce active hours
         now_utc = datetime.utcnow().replace(tzinfo=timezone.utc)
-        if not _is_within_active_hours(
+        if not is_within_active_hours(
             now_utc, site.active_start_hour or 0, site.active_end_hour or 0
         ):
             return 0
         # Enforce daily quota
-        generated_today = _count_today_generated(db, site.id)
+        generated_today = count_today_generated(db, site.id)
         if site.daily_quota is not None and generated_today >= (site.daily_quota or 0):
             return 0
         title = f"Auto Draft {datetime.utcnow().isoformat()}"
