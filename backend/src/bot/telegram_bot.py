@@ -4,7 +4,16 @@ from datetime import datetime, timedelta, timezone
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 import requests
-from telegram.constants import ParseMode
+try:
+    from telegram.constants import ParseMode  # PTB v20+
+    PARSE_MODE_HTML = ParseMode.HTML
+except Exception:  # pragma: no cover
+    try:
+        from telegram import ParseMode  # PTB v13 fallback
+        PARSE_MODE_HTML = ParseMode.HTML
+    except Exception:
+        ParseMode = None  # type: ignore
+        PARSE_MODE_HTML = "HTML"
 from telegram.ext import Application, CommandHandler, ContextTypes, CallbackQueryHandler
 
 from src.database.session import SessionLocal
