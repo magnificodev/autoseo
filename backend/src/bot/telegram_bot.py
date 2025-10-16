@@ -314,8 +314,10 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     await query.answer()
     data = query.data or ""
     try:
-        action, id_str = data.split(":", 1)
-        content_id = int(id_str)
+        parts = data.split(":")
+        action = parts[0]
+        content_id = int(parts[1]) if len(parts) > 1 else 0
+        extra = parts[2] if len(parts) > 2 else None
     except Exception:
         await query.edit_message_text("❌ Dữ liệu không hợp lệ.")
         return
@@ -323,13 +325,61 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     try:
         if action == "approve":
             ok, msg = _approve_item(db, content_id, query.from_user.id)
-        elif action == "reject":
-            ok, msg = _reject_item(db, content_id, query.from_user.id, "via_button")
-        elif action == "publish":
+            await query.edit_message_text(msg, parse_mode=ParseMode.HTML)
+            return
+
+        if action == "reject":
+            # Hiển thị gợi ý lý do nhanh
+            buttons = [[
+                InlineKeyboardButton(text="Duplicate", callback_data=f"confirm_reject:{content_id}:duplicate"),
+                InlineKeyboardButton(text="LowQuality", callback_data=f"confirm_reject:{content_id}:lowquality"),
+                InlineKeyboardButton(text="Irrelevant", callback_data=f"confirm_reject:{content_id}:irrelevant"),
+            ], [
+                InlineKeyboardButton(text="NoReason", callback_data=f"confirm_reject:{content_id}:noreason"),
+                InlineKeyboardButton(text="Cancel", callback_data=f"cancel:{content_id}"),
+            ]]
+            await query.edit_message_text(
+                f"🛑 Chọn lý do từ chối cho <code>#{content_id}</code>:",
+                parse_mode=ParseMode.HTML,
+                reply_markup=InlineKeyboardMarkup(buttons),
+            )
+            return
+
+        if action == "confirm_reject":
+            reason_map = {
+                "duplicate": "duplicate",
+                "lowquality": "low_quality",
+                "irrelevant": "irrelevant",
+                "noreason": "",
+            }
+            reason = reason_map.get((extra or "").lower(), extra or "")
+            ok, msg = _reject_item(db, content_id, query.from_user.id, reason)
+            await query.edit_message_text(msg, parse_mode=ParseMode.HTML)
+            return
+
+        if action == "publish":
+            # Hiển thị xác nhận publish
+            buttons = [[
+                InlineKeyboardButton(text="✅ Confirm Publish", callback_data=f"confirm_publish:{content_id}"),
+                InlineKeyboardButton(text="Cancel", callback_data=f"cancel:{content_id}"),
+            ]]
+            await query.edit_message_text(
+                f"📢 Xác nhận publish <code>#{content_id}</code>?",
+                parse_mode=ParseMode.HTML,
+                reply_markup=InlineKeyboardMarkup(buttons),
+            )
+            return
+
+        if action == "confirm_publish":
             ok, msg = _publish_item(db, content_id, query.from_user.id)
-        else:
-            ok, msg = False, "❌ Hành động không hỗ trợ."
-        await query.edit_message_text(msg, parse_mode=ParseMode.HTML)
+            await query.edit_message_text(msg, parse_mode=ParseMode.HTML)
+            return
+
+        if action == "cancel":
+            await query.edit_message_text("⏹ Đã hủy thao tác.")
+            return
+
+        await query.edit_message_text("❌ Hành động không hỗ trợ.")
     finally:
         db.close()
 
