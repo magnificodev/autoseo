@@ -112,6 +112,20 @@ jobs:
                       mv "$TMP_ENV" .env
                       echo "Injected TELEGRAM_TOKEN into .env"
 
+                      # Inject TELEGRAM_ADMINS if provided (comma-separated IDs)
+                      if [ -n "${{ secrets.TELEGRAM_ADMINS }}" ]; then
+                        ADMINS_VALUE="${{ secrets.TELEGRAM_ADMINS }}"
+                        TMP_ENV=$(mktemp)
+                        if [ -f .env ]; then
+                          grep -v '^TELEGRAM_ADMINS=' .env > "$TMP_ENV" || true
+                        fi
+                        echo "TELEGRAM_ADMINS=$ADMINS_VALUE" >> "$TMP_ENV"
+                        mv "$TMP_ENV" .env
+                        echo "Injected TELEGRAM_ADMINS into .env"
+                      else
+                        echo "Note: TELEGRAM_ADMINS not set; admin whitelist disabled"
+                      fi
+
                       # Build and start containers
                       docker compose pull || true
                       docker compose build
