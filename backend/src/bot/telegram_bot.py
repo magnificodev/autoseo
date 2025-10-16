@@ -1053,6 +1053,7 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("sites", cmd_sites))
     app.add_handler(CommandHandler("help", cmd_help))
+    app.add_handler(CommandHandler("profile", cmd_profile))
     app.add_handler(CommandHandler("myid", cmd_myid))
     app.add_handler(CommandHandler("whoami", cmd_whoami))
     app.add_handler(CommandHandler("reload_admins", cmd_reload_admins))
