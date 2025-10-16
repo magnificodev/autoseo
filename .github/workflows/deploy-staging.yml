@@ -117,5 +117,12 @@ jobs:
                         echo "Waiting for services... ($i/60)"
                         sleep 2
                       done
+                      echo "Validate connectivity from nginx to dashboard..."
+                      if ! docker compose exec -T nginx sh -lc "wget -qO- http://dashboard:3000/ >/dev/null"; then
+                        echo "Dashboard not reachable from nginx, restarting services..."
+                        docker compose restart dashboard nginx
+                        sleep 5
+                        docker compose exec -T nginx sh -lc "wget -qO- http://dashboard:3000/ >/dev/null"
+                      fi
                       # Alembic migrations with PYTHONPATH and safe fallback
                       docker compose exec -T backend sh -lc "cd /app && PYTHONPATH=/app alembic upgrade head || (PYTHONPATH=/app alembic stamp head && PYTHONPATH=/app alembic upgrade head)"
