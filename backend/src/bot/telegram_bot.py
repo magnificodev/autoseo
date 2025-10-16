@@ -84,6 +84,28 @@ async def cmd_sites(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text("\n".join(lines))
     finally:
         db.close()
+
+
+async def cmd_whoami(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user = update.effective_user
+    if user is None:
+        return
+    uid = user.id
+    owner = _OWNER_ID is not None and uid == _OWNER_ID
+    admin = _is_admin_user_id(uid)
+    await update.message.reply_text(
+        f"user_id={uid}\nowner={owner}\nadmin={admin}\nOWNER_ID={_OWNER_ID if _OWNER_ID is not None else '(none)'}"
+    )
+
+
+async def cmd_reload_admins(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    # Allow anyone to trigger; it only reloads from env. Useful after CD.
+    global _ENV_ADMIN_IDS, _OWNER_ID
+    _ENV_ADMIN_IDS = _load_env_admin_ids()
+    _OWNER_ID = _load_owner_id()
+    owner_str = str(_OWNER_ID) if _OWNER_ID is not None else "(none)"
+    env_ids = ",".join(str(i) for i in sorted(_ENV_ADMIN_IDS)) if _ENV_ADMIN_IDS else "(none)"
+    await update.message.reply_text(f"Reloaded. OWNER_ID={owner_str}; ENV={env_ids}")
 async def cmd_admins(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not await _ensure_admin(update):
         return
@@ -242,6 +264,8 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("sites", cmd_sites))
     app.add_handler(CommandHandler("myid", lambda u, c: u.message.reply_text(str(u.effective_user.id))))
+    app.add_handler(CommandHandler("whoami", cmd_whoami))
+    app.add_handler(CommandHandler("reload_admins", cmd_reload_admins))
     app.add_handler(CommandHandler("admins", cmd_admins))
     app.add_handler(CommandHandler("grant", cmd_grant))
     app.add_handler(CommandHandler("revoke", cmd_revoke_admin))
