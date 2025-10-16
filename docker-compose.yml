@@ -62,6 +62,17 @@ services:
         depends_on:
             - worker
 
+    bot:
+        build:
+            context: .
+            dockerfile: backend/Dockerfile
+        command: python -m src.bot.telegram_bot
+        environment:
+            TELEGRAM_TOKEN: ${TELEGRAM_TOKEN:-}
+        depends_on:
+            backend:
+                condition: service_started
+
     dashboard:
         build:
             context: .
