@@ -102,17 +102,21 @@ jobs:
                         if [ -f .env.example ]; then cp .env.example .env; fi
                       fi
 
-                      # Inject TELEGRAM_TOKEN from GitHub Secrets into .env
-                      if grep -q '^TELEGRAM_TOKEN=' .env 2>/dev/null; then
-                        sed -i "s/^TELEGRAM_TOKEN=.*/TELEGRAM_TOKEN=${{ secrets.TELEGRAM_TOKEN }}_/" .env
-                      else
-                        echo "TELEGRAM_TOKEN=${{ secrets.TELEGRAM_TOKEN }}" >> .env
+                      # Inject TELEGRAM_TOKEN from GitHub Secrets into .env (idempotent)
+                      TMP_ENV=$(mktemp)
+                      if [ -f .env ]; then
+                        grep -v '^TELEGRAM_TOKEN=' .env > "$TMP_ENV" || true
                       fi
+                      echo "TELEGRAM_TOKEN=${{ secrets.TELEGRAM_TOKEN }}" >> "$TMP_ENV"
+                      mv "$TMP_ENV" .env
+                      echo "Injected TELEGRAM_TOKEN into .env"
 
                       # Build and start containers
                       docker compose pull || true
                       docker compose build
                       docker compose up -d
+                      # Ensure bot restarted with new token
+                      docker compose up -d bot
 
                       # Health checks
                       echo "Waiting for services..."
