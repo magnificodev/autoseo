@@ -860,21 +860,13 @@ async def cmd_profile(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     admin = _is_admin_user_id(uid)
     owner_badge = "✅" if owner else "❌"
     admin_badge = "✅" if admin else "❌"
-    owner_id = _OWNER_ID if _OWNER_ID is not None else "(none)"
     msg = (
         "👤 <b>Hồ sơ</b>\n"
         f"• ID: <code>{uid}</code>\n"
         f"• Owner: <b>{owner_badge}</b>\n"
-        f"• Admin: <b>{admin_badge}</b>\n"
-        f"• OWNER_ID đang nạp: <code>{owner_id}</code>"
+        f"• Admin: <b>{admin_badge}</b>"
     )
-    kb = [
-        [
-            InlineKeyboardButton(text="Copy ID", callback_data=f"copy_myid:{uid}"),
-            InlineKeyboardButton(text="Reload Admins", callback_data="reload_admins_cb:0"),
-        ]
-    ]
-    await update.message.reply_text(msg, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(kb))
+    await update.message.reply_text(msg, parse_mode=ParseMode.HTML)
 
 
 async def cmd_reload_admins(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -1054,8 +1046,7 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("sites", cmd_sites))
     app.add_handler(CommandHandler("help", cmd_help))
     app.add_handler(CommandHandler("profile", cmd_profile))
-    app.add_handler(CommandHandler("myid", cmd_myid))
-    app.add_handler(CommandHandler("whoami", cmd_whoami))
+    # Remove dedicated commands to keep UI gọn: dùng /profile thay thế
     app.add_handler(CommandHandler("reload_admins", cmd_reload_admins))
     app.add_handler(CommandHandler("status", cmd_status))
     app.add_handler(CommandHandler("admins", cmd_admins))
