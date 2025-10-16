@@ -17,11 +17,18 @@ export default function ClientAuthLinks() {
     }
   }, [])
 
+  async function doLogout() {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+      window.location.href = '/login'
+    } catch {
+      window.location.href = '/login'
+    }
+  }
+
   if (loggedIn) {
     return (
-      <form action="/api/auth/logout" method="POST" style={{ float: 'right' }}>
-        <button type="submit">Logout</button>
-      </form>
+      <button onClick={doLogout} style={{ float: 'right' }}>Logout</button>
     )
   }
   return (

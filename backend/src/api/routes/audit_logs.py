@@ -19,7 +19,7 @@ class AuditLogOut(BaseModel):
     target_type: str
     target_id: int
     note: str | None
-    created_at: str | None
+    created_at: datetime | None
 
     class Config:
         from_attributes = True
