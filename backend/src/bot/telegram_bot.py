@@ -1,6 +1,6 @@
 import asyncio
 import os
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
@@ -88,25 +88,69 @@ async def _ensure_owner(update: Update) -> bool:
 
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text("Autoseo bot sẵn sàng. Dùng /sites để xem danh sách.")
+    await update.message.reply_text(
+        "🚀 Autoseo bot đã sẵn sàng!\n\nDùng /help để xem đầy đủ lệnh."
+    )
 
 
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     lines = [
-        "Lệnh khả dụng:",
-        "/start - chào mừng",
-        "/help - danh sách lệnh",
-        "/sites - liệt kê site",
-        "/myid - xem Telegram user id",
-        "/whoami - xem quyền hiện tại",
-        "/admins - xem owner/env/db admins",
-        "/grant <user_id> - cấp quyền admin (owner)",
-        "/revoke <user_id> - thu quyền admin (owner)",
-        "/approve <content_id> - duyệt nội dung",
-        "/reject <content_id> [lý_do] - từ chối nội dung",
-        "/reload_admins - nạp lại owner/admin từ env",
+        "📖 Danh sách lệnh:",
+        "• /sites – liệt kê site",
+        "• /status – thống kê hôm nay",
+        "• /queue <site_id> [n] – xem queue chờ duyệt",
+        "• /approve <id> – duyệt nội dung",
+        "• /reject <id> [lý_do] – từ chối",
+        "• /publish <id> – publish ngay (sắp có)",
+        "• /myid, /whoami – xem ID & quyền",
+        "• /admins – owner/env/db admins",
+        "• /grant <user_id> /revoke <user_id> – quản trị (owner)",
+        "• /reload_admins – nạp lại owner/admin từ env",
     ]
     await update.message.reply_text("\n".join(lines))
+
+
+def _today_range_utc() -> tuple[datetime, datetime]:
+    now = datetime.now(timezone.utc)
+    start = datetime(year=now.year, month=now.month, day=now.day, tzinfo=timezone.utc)
+    end = start + timedelta(days=1)
+    return start, end
+
+
+async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not await _ensure_admin(update):
+        return
+    start, end = _today_range_utc()
+    db = SessionLocal()
+    try:
+        from sqlalchemy import func
+
+        total_pending = (
+            db.query(func.count(ContentQueue.id))
+            .filter(ContentQueue.status == "pending")
+            .scalar()
+        )
+        today_approved = (
+            db.query(func.count(ContentQueue.id))
+            .filter(ContentQueue.status == "approved")
+            .filter(ContentQueue.updated_at >= start, ContentQueue.updated_at < end)
+            .scalar()
+        )
+        today_published = (
+            db.query(func.count(ContentQueue.id))
+            .filter(ContentQueue.status == "published")
+            .filter(ContentQueue.updated_at >= start, ContentQueue.updated_at < end)
+            .scalar()
+        )
+        msg = (
+            "📊 Trạng thái hôm nay\n"
+            f"• ⏳ Pending: {total_pending}\n"
+            f"• ✅ Approved (today): {today_approved}\n"
+            f"• 📢 Published (today): {today_published}"
+        )
+        await update.message.reply_text(msg)
+    finally:
+        db.close()
 
 
 async def cmd_sites(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -114,9 +158,9 @@ async def cmd_sites(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         rows = db.query(Site).all()
         if not rows:
-            await update.message.reply_text("Chưa có site nào.")
+            await update.message.reply_text("ℹ️ Chưa có site nào.")
             return
-        lines = [f"#{s.id}: {s.name} — {s.wp_url}" for s in rows]
+        lines = [f"#{s.id} • {s.name}\n↳ {s.wp_url}" for s in rows]
         await update.message.reply_text("\n".join(lines))
     finally:
         db.close()
@@ -152,10 +196,10 @@ async def cmd_admins(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         owner_str = str(_OWNER_ID) if _OWNER_ID is not None else "(chưa đặt)"
         env_ids = ",".join(str(i) for i in sorted(_ENV_ADMIN_IDS)) if _ENV_ADMIN_IDS else "(không)"
         lines = [
-            f"Owner: {owner_str}",
-            f"ENV admins: {env_ids}",
-            "DB admins:",
-            "- " + "\n- ".join(ids) if ids else "(trống)",
+            f"👑 Owner: {owner_str}",
+            f"🛠 ENV admins: {env_ids}",
+            "📜 DB admins:",
+            ("• " + "\n• ".join(ids)) if ids else "(trống)",
         ]
         await update.message.reply_text("\n".join(lines))
     finally:
@@ -185,7 +229,7 @@ async def cmd_grant(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             return
         db.add(TelegramAdmin(user_id=grant_id, created_at=datetime.utcnow()))
         db.commit()
-        await update.message.reply_text(f"Đã cấp quyền admin cho {grant_id}.")
+        await update.message.reply_text(f"✅ Đã cấp quyền admin cho {grant_id}.")
     finally:
         db.close()
 
@@ -213,7 +257,7 @@ async def cmd_revoke_admin(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             return
         db.delete(row)
         db.commit()
-        await update.message.reply_text(f"Đã thu quyền admin của {revoke_id}.")
+        await update.message.reply_text(f"♻️ Đã thu quyền admin của {revoke_id}.")
     finally:
         db.close()
 
@@ -230,10 +274,12 @@ async def cmd_approve(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     try:
         item = db.get(ContentQueue, int(content_id))
         if not item:
-            await update.message.reply_text(f"Không tìm thấy content #{content_id}.")
+            await update.message.reply_text(f"❌ Không tìm thấy content #{content_id}.")
             return
         if item.status in {"approved", "published"}:
-            await update.message.reply_text(f"Content #{content_id} đã ở trạng thái {item.status}, không thể duyệt lại.")
+            await update.message.reply_text(
+                f"⚠️ Content #{content_id} đang ở trạng thái '{item.status}', không thể duyệt lại."
+            )
             return
         item.status = "approved"
         item.updated_at = datetime.utcnow()
@@ -247,7 +293,7 @@ async def cmd_approve(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             )
         )
         db.commit()
-        await update.message.reply_text(f"Đã duyệt content #{content_id}.")
+        await update.message.reply_text(f"✅ Đã duyệt content #{content_id}.")
     finally:
         db.close()
 
@@ -265,10 +311,12 @@ async def cmd_reject(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     try:
         item = db.get(ContentQueue, int(content_id))
         if not item:
-            await update.message.reply_text(f"Không tìm thấy content #{content_id}.")
+            await update.message.reply_text(f"❌ Không tìm thấy content #{content_id}.")
             return
         if item.status == "published":
-            await update.message.reply_text(f"Content #{content_id} đã published, không thể từ chối.")
+            await update.message.reply_text(
+                f"⚠️ Content #{content_id} đã published, không thể từ chối."
+            )
             return
         item.status = "rejected"
         item.updated_at = datetime.utcnow()
@@ -283,7 +331,7 @@ async def cmd_reject(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         )
         db.commit()
         await update.message.reply_text(
-            f"Đã từ chối content #{content_id} — lý do: {reason}."
+            f"🛑 Đã từ chối content #{content_id}\n• Lý do: {reason}"
         )
     finally:
         db.close()
@@ -304,6 +352,7 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("myid", lambda u, c: u.message.reply_text(str(u.effective_user.id))))
     app.add_handler(CommandHandler("whoami", cmd_whoami))
     app.add_handler(CommandHandler("reload_admins", cmd_reload_admins))
+    app.add_handler(CommandHandler("status", cmd_status))
     app.add_handler(CommandHandler("admins", cmd_admins))
     app.add_handler(CommandHandler("grant", cmd_grant))
     app.add_handler(CommandHandler("revoke", cmd_revoke_admin))
