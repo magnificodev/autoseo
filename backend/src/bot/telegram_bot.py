@@ -175,7 +175,7 @@ async def cmd_queue(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     except ValueError:
         await update.message.reply_text("Tham số không hợp lệ. Ví dụ: /queue 1 10")
         return
-    _send_queue_page(update, site_id=site_id, offset=0, limit=limit)
+    await _send_queue_page(update, site_id=site_id, offset=0, limit=limit)
 
 
 def _fetch_pending(site_id: int, offset: int, limit: int) -> list[ContentQueue]:
@@ -194,10 +194,10 @@ def _fetch_pending(site_id: int, offset: int, limit: int) -> list[ContentQueue]:
         db.close()
 
 
-def _send_queue_page(update: Update, site_id: int, offset: int, limit: int) -> None:
+async def _send_queue_page(update: Update, site_id: int, offset: int, limit: int) -> None:
     rows = _fetch_pending(site_id, offset, limit)
     if not rows:
-        update.message.reply_text(
+        await update.message.reply_text(
             "ℹ️ <i>Không có mục chờ duyệt cho site này.</i>", parse_mode=ParseMode.HTML
         )
         return
@@ -205,23 +205,42 @@ def _send_queue_page(update: Update, site_id: int, offset: int, limit: int) -> N
     start = offset + 1
     end = offset + len(rows)
     header = f"📥 <b>Pending queue</b> (site={site_id}) — <i>{start}–{end}</i>"
-    update.message.reply_text(header, parse_mode=ParseMode.HTML,
-                              reply_markup=InlineKeyboardMarkup([[
-                                  InlineKeyboardButton("⬅️ Prev", callback_data=f"page:{site_id}:{max(0, offset - limit)}"),
-                                  InlineKeyboardButton("➡️ Next", callback_data=f"page:{site_id}:{offset + limit}"),
-                              ]]))
+    await update.message.reply_text(
+        header,
+        parse_mode=ParseMode.HTML,
+        reply_markup=InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton(
+                        "⬅️ Prev", callback_data=f"page:{site_id}:{max(0, offset - limit)}"
+                    ),
+                    InlineKeyboardButton(
+                        "➡️ Next", callback_data=f"page:{site_id}:{offset + limit}"
+                    ),
+                ]
+            ]
+        ),
+    )
     # Gửi từng item với nút hành động + xem nội dung
     for r in rows:
         text = f"<b>#{r.id}</b> • {r.title[:80]}"
         buttons = [
             [
-                InlineKeyboardButton(text="👁 View", callback_data=f"view:{r.id}:{site_id}:{offset}:{limit}"),
-                InlineKeyboardButton(text="✅ Approve", callback_data=f"approve:{r.id}:{site_id}:{offset}:{limit}"),
-                InlineKeyboardButton(text="🛑 Reject", callback_data=f"reject:{r.id}:{site_id}:{offset}:{limit}"),
-                InlineKeyboardButton(text="📢 Publish", callback_data=f"publish:{r.id}:{site_id}:{offset}:{limit}"),
+                InlineKeyboardButton(
+                    text="👁 View", callback_data=f"view:{r.id}:{site_id}:{offset}:{limit}"
+                ),
+                InlineKeyboardButton(
+                    text="✅ Approve", callback_data=f"approve:{r.id}:{site_id}:{offset}:{limit}"
+                ),
+                InlineKeyboardButton(
+                    text="🛑 Reject", callback_data=f"reject:{r.id}:{site_id}:{offset}:{limit}"
+                ),
+                InlineKeyboardButton(
+                    text="📢 Publish", callback_data=f"publish:{r.id}:{site_id}:{offset}:{limit}"
+                ),
             ]
         ]
-        update.message.reply_text(
+        await update.message.reply_text(
             text, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(buttons)
         )
 
@@ -426,38 +445,20 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             return
 
         if action == "page":
-            # callback for pagination from header
-            # reuse same chat by sending a new page header
-            site_id = content_id  # in this context content_id is site_id (packed earlier)
+            # callback for pagination from header: data format page:<site_id>:<offset>
             try:
-                new_offset = int(extra or 0)
+                site_id = int(parts[1])
+                new_offset = int(parts[2])
             except Exception:
-                new_offset = 0
-            # cannot edit header message easily with list below; simply acknowledge
+                await query.edit_message_text("❌ Tham số phân trang không hợp lệ.")
+                return
             await query.edit_message_text("🔄 Đang tải trang...")
-            # Send new page in chat
+            # Gửi trang mới vào chat hiện tại
             chat = update.effective_chat
             if chat:
-                # Build a fake Update-like call using context.bot
-                from telegram import Message
-                # Send header
-                header = f"📥 <b>Pending queue</b> (site={site_id}) — <i>{new_offset+1}…</i>"
-                await context.bot.send_message(chat.id, header, parse_mode=ParseMode.HTML,
-                    reply_markup=InlineKeyboardMarkup([[
-                        InlineKeyboardButton("⬅️ Prev", callback_data=f"page:{site_id}:{max(0, new_offset - 10)}"),
-                        InlineKeyboardButton("➡️ Next", callback_data=f"page:{site_id}:{new_offset + 10}"),
-                    ]]))
-                rows = _fetch_pending(site_id, new_offset, 10)
-                for r in rows:
-                    text = f"<b>#{r.id}</b> • {r.title[:80]}"
-                    buttons = [[
-                        InlineKeyboardButton(text="👁 View", callback_data=f"view:{r.id}"),
-                        InlineKeyboardButton(text="✅ Approve", callback_data=f"approve:{r.id}"),
-                        InlineKeyboardButton(text="🛑 Reject", callback_data=f"reject:{r.id}"),
-                        InlineKeyboardButton(text="📢 Publish", callback_data=f"publish:{r.id}"),
-                    ]]
-                    await context.bot.send_message(chat.id, text, parse_mode=ParseMode.HTML,
-                        reply_markup=InlineKeyboardMarkup(buttons))
+                dummy_update = update  # reuse update to call helper
+                # Gửi bằng bot: chúng ta gửi message mới, không sửa lại header cũ
+                await _send_queue_page(update, site_id=site_id, offset=new_offset, limit=limit_ctx or 10)
             return
 
         await query.edit_message_text("❌ Hành động không hỗ trợ.")
