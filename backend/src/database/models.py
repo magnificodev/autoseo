@@ -1,6 +1,15 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    BigInteger,
+)
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -63,3 +72,11 @@ class ContentQueue(Base):
     updated_at = Column(DateTime, default=datetime.utcnow)
 
     site = relationship("Site")
+
+
+class TelegramAdmin(Base):
+    __tablename__ = "telegram_admins"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(BigInteger, unique=True, nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
