@@ -1,9 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-
 from src.api.deps.auth import get_current_user
 from src.scheduler.tasks import generate_draft_for_site
-
 
 router = APIRouter(prefix="/scheduler", tags=["scheduler"])
 
@@ -21,5 +19,3 @@ def run_draft_now(body: RunDraftNowIn, user=Depends(get_current_user)):
     # async via celery
     async_result = generate_draft_for_site.delay(body.site_id)
     return {"ok": True, "mode": "async", "task_id": async_result.id}
-
-

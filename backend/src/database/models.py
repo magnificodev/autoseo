@@ -1,7 +1,7 @@
 from datetime import datetime
+
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import declarative_base, relationship
-
 
 Base = declarative_base()
 
@@ -37,7 +37,9 @@ class Keyword(Base):
     __tablename__ = "keywords"
 
     id = Column(Integer, primary_key=True)
-    site_id = Column(Integer, ForeignKey("sites.id", ondelete="CASCADE"), nullable=False)
+    site_id = Column(
+        Integer, ForeignKey("sites.id", ondelete="CASCADE"), nullable=False
+    )
     keyword = Column(String(255), nullable=False, index=True)
     language = Column(String(16), default="vi")
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -49,13 +51,15 @@ class ContentQueue(Base):
     __tablename__ = "content_queue"
 
     id = Column(Integer, primary_key=True)
-    site_id = Column(Integer, ForeignKey("sites.id", ondelete="CASCADE"), nullable=False)
+    site_id = Column(
+        Integer, ForeignKey("sites.id", ondelete="CASCADE"), nullable=False
+    )
     title = Column(String(500), nullable=False)
     body = Column(Text, nullable=True)
-    status = Column(String(32), default="pending")  # pending|approved|rejected|published
+    status = Column(
+        String(32), default="pending"
+    )  # pending|approved|rejected|published
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
     site = relationship("Site")
-
-

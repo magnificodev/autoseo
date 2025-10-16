@@ -7,7 +7,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
         ...(options.headers as Record<string, string> | undefined),
     };
     if (token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch(`${API_PREFIX}${path}`, { ...options, headers });
+    const res = await fetch(`${API_PREFIX}${path}`, { ...options, headers });
     if (!res.ok) {
         const text = await res.text();
         throw new Error(text || `Request failed: ${res.status}`);

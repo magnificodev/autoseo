@@ -92,33 +92,49 @@ export default function SitesPage() {
                     <input
                         type="checkbox"
                         checked={!!updateForm.is_auto_enabled}
-                        onChange={(e) => setUpdateForm({ ...updateForm, is_auto_enabled: e.target.checked })}
+                        onChange={(e) =>
+                            setUpdateForm({ ...updateForm, is_auto_enabled: e.target.checked })
+                        }
                     />
                     &nbsp;Enable auto
                 </label>
                 <input
                     placeholder="Cron (e.g. */2 * * * *)"
                     value={updateForm.schedule_cron || ''}
-                    onChange={(e) => setUpdateForm({ ...updateForm, schedule_cron: e.target.value })}
+                    onChange={(e) =>
+                        setUpdateForm({ ...updateForm, schedule_cron: e.target.value })
+                    }
                 />
                 <input
                     type="number"
                     placeholder="Daily quota"
                     value={updateForm.daily_quota ?? ''}
-                    onChange={(e) => setUpdateForm({ ...updateForm, daily_quota: Number(e.target.value) })}
+                    onChange={(e) =>
+                        setUpdateForm({ ...updateForm, daily_quota: Number(e.target.value) })
+                    }
                 />
                 <div style={{ display: 'flex', gap: 8 }}>
                     <input
                         type="number"
                         placeholder="Active start hour"
                         value={updateForm.active_start_hour ?? ''}
-                        onChange={(e) => setUpdateForm({ ...updateForm, active_start_hour: Number(e.target.value) })}
+                        onChange={(e) =>
+                            setUpdateForm({
+                                ...updateForm,
+                                active_start_hour: Number(e.target.value),
+                            })
+                        }
                     />
                     <input
                         type="number"
                         placeholder="Active end hour"
                         value={updateForm.active_end_hour ?? ''}
-                        onChange={(e) => setUpdateForm({ ...updateForm, active_end_hour: Number(e.target.value) })}
+                        onChange={(e) =>
+                            setUpdateForm({
+                                ...updateForm,
+                                active_end_hour: Number(e.target.value),
+                            })
+                        }
                     />
                 </div>
                 <button
@@ -149,7 +165,9 @@ export default function SitesPage() {
                                 {s.name} – {s.wp_url}
                             </div>
                             <div style={{ fontSize: 12, opacity: 0.8 }}>
-                                auto: {String(s.is_auto_enabled)} | cron: {s.schedule_cron || '-'} | quota: {s.daily_quota ?? '-'} | hours: {s.active_start_hour ?? '-'}–{s.active_end_hour ?? '-'}
+                                auto: {String(s.is_auto_enabled)} | cron: {s.schedule_cron || '-'} |
+                                quota: {s.daily_quota ?? '-'} | hours: {s.active_start_hour ?? '-'}–
+                                {s.active_end_hour ?? '-'}
                             </div>
                         </div>
                     </li>

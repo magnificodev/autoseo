@@ -65,7 +65,12 @@ def create_site(
 
 
 @router.patch("/{site_id}", response_model=SiteOut)
-def update_site(site_id: int, body: SiteUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def update_site(
+    site_id: int,
+    body: SiteUpdate,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
     site = db.query(Site).get(site_id)
     if not site:
         from fastapi import HTTPException

@@ -10,7 +10,6 @@ from src.api.routes import content as content_router
 from src.api.routes import keywords as keywords_router
 from src.api.routes import scheduler as scheduler_router
 from src.api.routes import sites as sites_router
-from src.database.models import Base
 from src.database.session import engine
 
 
