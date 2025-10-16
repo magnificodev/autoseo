@@ -32,10 +32,11 @@ services:
             - postgres
             - redis
         healthcheck:
-            test: ['CMD', 'curl', '-f', 'http://localhost:8000/health']
-            interval: 30s
-            timeout: 10s
-            retries: 3
+            test: ['CMD', 'python', '-c', 'import urllib.request,sys; sys.exit(0) if urllib.request.urlopen("http://localhost:8000/health").getcode()==200 else sys.exit(1)']
+            start_period: 30s
+            interval: 10s
+            timeout: 5s
+            retries: 5
         restart: unless-stopped
 
     worker:
@@ -88,7 +89,8 @@ services:
         depends_on:
             - backend
         healthcheck:
-            test: ['CMD', 'curl', '-f', 'http://localhost:3000']
+            test: ['CMD-SHELL', 'wget -qO- http://localhost:3000 >/dev/null 2>&1 || exit 1']
+            start_period: 30s
             interval: 10s
             timeout: 5s
             retries: 12
