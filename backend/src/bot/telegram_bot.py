@@ -91,6 +91,24 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text("Autoseo bot sẵn sàng. Dùng /sites để xem danh sách.")
 
 
+async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    lines = [
+        "Lệnh khả dụng:",
+        "/start - chào mừng",
+        "/help - danh sách lệnh",
+        "/sites - liệt kê site",
+        "/myid - xem Telegram user id",
+        "/whoami - xem quyền hiện tại",
+        "/admins - xem owner/env/db admins",
+        "/grant <user_id> - cấp quyền admin (owner)",
+        "/revoke <user_id> - thu quyền admin (owner)",
+        "/approve <content_id> - duyệt nội dung",
+        "/reject <content_id> [lý_do] - từ chối nội dung",
+        "/reload_admins - nạp lại owner/admin từ env",
+    ]
+    await update.message.reply_text("\n".join(lines))
+
+
 async def cmd_sites(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     db = SessionLocal()
     try:
@@ -282,6 +300,7 @@ def build_app() -> Application:
     app = Application.builder().token(token).build()
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("sites", cmd_sites))
+    app.add_handler(CommandHandler("help", cmd_help))
     app.add_handler(CommandHandler("myid", lambda u, c: u.message.reply_text(str(u.effective_user.id))))
     app.add_handler(CommandHandler("whoami", cmd_whoami))
     app.add_handler(CommandHandler("reload_admins", cmd_reload_admins))
