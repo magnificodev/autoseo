@@ -107,7 +107,11 @@ def update_site(
     )
 
 
-@router.post("/test-connection")
+class TestConnectionOut(BaseModel):
+    ok: bool
+
+
+@router.post("/test-connection", response_model=TestConnectionOut)
 def test_connection(body: SiteIn, user=Depends(get_current_user)):
     # Normalize URL to include scheme
     wp_url = body.wp_url.strip()
@@ -121,7 +125,7 @@ def test_connection(body: SiteIn, user=Depends(get_current_user)):
     try:
         client = WordPressClient(creds)
         ok = client.test_connection()
-        return {"ok": ok}
+        return TestConnectionOut(ok=ok)
     except Exception as e:
         from fastapi import HTTPException
 

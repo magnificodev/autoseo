@@ -1,6 +1,8 @@
 import os
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy.exc import OperationalError
@@ -51,6 +53,14 @@ def create_app() -> FastAPI:
         response = await call_next(request)
         # Placeholder for future correlation-id
         return response
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(request: Request, exc: RequestValidationError):
+        return JSONResponse(status_code=422, content={"detail": exc.errors()})
+
+    @app.exception_handler(Exception)
+    async def unhandled_exception_handler(request: Request, exc: Exception):
+        return JSONResponse(status_code=500, content={"detail": "internal_error"})
 
     return app
 

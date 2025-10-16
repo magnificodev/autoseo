@@ -58,6 +58,13 @@ class PublishIn(BaseModel):
     status: str = "draft"  # draft|publish
 
 
+class PublishOut(BaseModel):
+    ok: bool
+    post_id: int | None = None
+    link: str | None = None
+    raw: dict | None = None
+
+
 def _checklist(title: str, body: str) -> dict:
     issues: list[str] = []
     warnings: list[str] = []
@@ -96,7 +103,7 @@ def checklist(body: ChecklistIn):
     return report
 
 
-@router.post("/publish")
+@router.post("/publish", response_model=PublishOut)
 def publish_content(
     body: PublishIn = Body(...),
     db: Session = Depends(get_db),
