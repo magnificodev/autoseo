@@ -71,7 +71,7 @@ def update_site(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    site = db.query(Site).get(site_id)
+    site = db.get(Site, site_id)
     if not site:
         from fastapi import HTTPException
 

@@ -102,7 +102,7 @@ def publish_content(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    site: Site | None = db.query(Site).get(body.site_id)
+    site: Site | None = db.get(Site, body.site_id)
     if not site:
         raise HTTPException(status_code=404, detail="site_not_found")
     report = _checklist(title=body.title or "", body=body.body or "")
