@@ -824,6 +824,15 @@ async def cmd_whoami(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     await update.message.reply_text(msg, parse_mode=ParseMode.HTML)
 
 
+async def cmd_myid(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user = update.effective_user
+    if user is None:
+        return
+    await update.message.reply_text(
+        f"👤 <b>User ID</b>: <code>{user.id}</code>", parse_mode=ParseMode.HTML
+    )
+
+
 async def cmd_reload_admins(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Allow anyone to trigger; it only reloads from env. Useful after CD.
     global _ENV_ADMIN_IDS, _OWNER_ID
@@ -1000,7 +1009,7 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("sites", cmd_sites))
     app.add_handler(CommandHandler("help", cmd_help))
-    app.add_handler(CommandHandler("myid", lambda u, c: u.message.reply_text(str(u.effective_user.id))))
+    app.add_handler(CommandHandler("myid", cmd_myid))
     app.add_handler(CommandHandler("whoami", cmd_whoami))
     app.add_handler(CommandHandler("reload_admins", cmd_reload_admins))
     app.add_handler(CommandHandler("status", cmd_status))
