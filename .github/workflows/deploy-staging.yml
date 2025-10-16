@@ -103,16 +103,14 @@ jobs:
                       fi
 
                       # Inject TELEGRAM_TOKEN from GitHub Secrets into .env (idempotent)
-                      # Support either TELEGRAM_BOT or TELEGRAM_TOKEN secret names
-                      TELE_TOKEN="${{ secrets.TELEGRAM_BOT }}"
-                      if [ -z "$TELE_TOKEN" ]; then TELE_TOKEN="${{ secrets.TELEGRAM_TOKEN }}"; fi
+                      TELE_TOKEN="${{ secrets.TELEGRAM_TOKEN }}"
                       TMP_ENV=$(mktemp)
                       if [ -f .env ]; then
                         grep -v '^TELEGRAM_TOKEN=' .env > "$TMP_ENV" || true
                       fi
                       if [ -n "$TELE_TOKEN" ]; then echo "TELEGRAM_TOKEN=$TELE_TOKEN" >> "$TMP_ENV"; fi
                       mv "$TMP_ENV" .env
-                      echo "Injected TELEGRAM_TOKEN into .env (from TELEGRAM_BOT/TELEGRAM_TOKEN)"
+                      echo "Injected TELEGRAM_TOKEN into .env"
 
                       # Build and start containers
                       docker compose pull || true
