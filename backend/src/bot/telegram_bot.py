@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 
 from telegram import Update
 import requests
+from telegram.constants import ParseMode
 from telegram.ext import Application, CommandHandler, ContextTypes
 
 from src.database.session import SessionLocal
@@ -90,30 +91,31 @@ async def _ensure_owner(update: Update) -> bool:
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
-        "🚀 Autoseo bot đã sẵn sàng!\n\nDùng /help để xem đầy đủ lệnh."
+        "🚀 <b>Autoseo Bot đã sẵn sàng</b>\n\nGõ <b>/help</b> để xem danh sách lệnh.",
+        parse_mode=ParseMode.HTML,
     )
 
 
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     lines = [
-        "📖 Danh sách lệnh:",
-        "• /sites – liệt kê site",
-        "• /status – thống kê hôm nay",
-        "• /queue <site_id> [n] – xem queue chờ duyệt",
-        "• /approve <id> – duyệt nội dung",
-        "• /reject <id> [lý_do] – từ chối",
-        "• /publish <id> – publish ngay",
-        "• /setquota <site_id> <n> – đặt quota/ngày",
-        "• /sethours <site_id> <start> <end> – đặt khung giờ",
-        "• /toggleauto <site_id> on|off – bật/tắt auto",
-        "• /find <keyword> – tìm nội dung theo tiêu đề",
-        "• /health – kiểm tra hệ thống",
-        "• /myid, /whoami – xem ID & quyền",
-        "• /admins – owner/env/db admins",
-        "• /grant <user_id> /revoke <user_id> – quản trị (owner)",
-        "• /reload_admins – nạp lại owner/admin từ env",
+        "📖 <b>Danh sách lệnh</b>",
+        "• <b>/sites</b> – liệt kê site",
+        "• <b>/status</b> – thống kê hôm nay",
+        "• <b>/queue</b> <code>&lt;site_id&gt; [n]</code> – xem queue chờ duyệt",
+        "• <b>/approve</b> <code>&lt;id&gt;</code> – duyệt nội dung",
+        "• <b>/reject</b> <code>&lt;id&gt; [lý_do]</code> – từ chối",
+        "• <b>/publish</b> <code>&lt;id&gt;</code> – publish ngay",
+        "• <b>/setquota</b> <code>&lt;site_id&gt; &lt;n&gt;</code> – đặt quota/ngày",
+        "• <b>/sethours</b> <code>&lt;site_id&gt; &lt;start&gt; &lt;end&gt;</code> – đặt khung giờ",
+        "• <b>/toggleauto</b> <code>&lt;site_id&gt; on|off</code> – bật/tắt auto",
+        "• <b>/find</b> <code>&lt;keyword&gt;</code> – tìm nội dung",
+        "• <b>/health</b> – kiểm tra hệ thống",
+        "• <b>/myid</b>, <b>/whoami</b> – xem ID & quyền",
+        "• <b>/admins</b> – owner/env/db admins",
+        "• <b>/grant</b>/<b>/revoke</b> – quản trị (owner)",
+        "• <b>/reload_admins</b> – nạp lại owner/admin từ env",
     ]
-    await update.message.reply_text("\n".join(lines))
+    await update.message.reply_text("\n".join(lines), parse_mode=ParseMode.HTML)
 
 
 def _today_range_utc() -> tuple[datetime, datetime]:
@@ -149,12 +151,12 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
             .scalar()
         )
         msg = (
-            "📊 Trạng thái hôm nay\n"
-            f"• ⏳ Pending: {total_pending}\n"
-            f"• ✅ Approved (today): {today_approved}\n"
-            f"• 📢 Published (today): {today_published}"
+            "📊 <b>Trạng thái hôm nay</b>\n"
+            f"• ⏳ Pending: <b>{total_pending}</b>\n"
+            f"• ✅ Approved (today): <b>{today_approved}</b>\n"
+            f"• 📢 Published (today): <b>{today_published}</b>"
         )
-        await update.message.reply_text(msg)
+        await update.message.reply_text(msg, parse_mode=ParseMode.HTML)
     finally:
         db.close()
 
@@ -183,10 +185,10 @@ async def cmd_queue(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             .all()
         )
         if not rows:
-            await update.message.reply_text("ℹ️ Không có mục chờ duyệt cho site này.")
+            await update.message.reply_text("ℹ️ <i>Không có mục chờ duyệt cho site này.</i>", parse_mode=ParseMode.HTML)
             return
-        lines = [f"#{r.id} • {r.title[:80]}" for r in rows]
-        await update.message.reply_text("📥 Pending queue:\n" + "\n".join(lines))
+        lines = [f"<b>#{r.id}</b> • {r.title[:80]}" for r in rows]
+        await update.message.reply_text("📥 <b>Pending queue</b>\n" + "\n".join(lines), parse_mode=ParseMode.HTML)
     finally:
         db.close()
 
@@ -203,13 +205,13 @@ async def cmd_publish(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     try:
         item = db.get(ContentQueue, int(content_id))
         if not item:
-            await update.message.reply_text(f"❌ Không tìm thấy content #{content_id}.")
+            await update.message.reply_text(f"❌ Không tìm thấy content <code>#{content_id}</code>.", parse_mode=ParseMode.HTML)
             return
         if item.status == "published":
-            await update.message.reply_text("⚠️ Mục này đã published rồi.")
+            await update.message.reply_text("⚠️ Mục này đã <b>published</b> rồi.", parse_mode=ParseMode.HTML)
             return
         if item.status != "approved":
-            await update.message.reply_text("⚠️ Chỉ publish mục đã Approved.")
+            await update.message.reply_text("⚠️ Chỉ publish mục đã <b>Approved</b>.", parse_mode=ParseMode.HTML)
             return
         item.status = "published"
         item.updated_at = datetime.utcnow()
@@ -223,7 +225,7 @@ async def cmd_publish(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             )
         )
         db.commit()
-        await update.message.reply_text(f"📢 Đã publish content #{content_id}.")
+        await update.message.reply_text(f"📢 Đã publish content <code>#{content_id}</code>.", parse_mode=ParseMode.HTML)
     finally:
         db.close()
 
@@ -356,11 +358,11 @@ async def cmd_health(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     try:
         r = requests.get("http://backend:8000/health", timeout=5)
         if r.ok:
-            await update.message.reply_text(f"✅ Backend OK: {r.text}")
+            await update.message.reply_text(f"✅ <b>Backend OK</b>: <code>{r.text}</code>", parse_mode=ParseMode.HTML)
         else:
-            await update.message.reply_text(f"⚠️ Backend degraded: {r.status_code}")
+            await update.message.reply_text(f"⚠️ Backend degraded: <code>{r.status_code}</code>", parse_mode=ParseMode.HTML)
     except Exception as e:
-        await update.message.reply_text(f"❌ Backend unreachable: {e}")
+        await update.message.reply_text(f"❌ Backend unreachable: <code>{e}</code>", parse_mode=ParseMode.HTML)
 
 
 def _bot_api(method: str, payload: dict) -> None:
@@ -427,10 +429,10 @@ async def cmd_sites(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         rows = db.query(Site).all()
         if not rows:
-            await update.message.reply_text("ℹ️ Chưa có site nào.")
+            await update.message.reply_text("ℹ️ <i>Chưa có site nào.</i>", parse_mode=ParseMode.HTML)
             return
-        lines = [f"#{s.id} • {s.name}\n↳ {s.wp_url}" for s in rows]
-        await update.message.reply_text("\n".join(lines))
+        lines = [f"<b>#{s.id}</b> • {s.name}\n↳ <code>{s.wp_url}</code>" for s in rows]
+        await update.message.reply_text("\n".join(lines), parse_mode=ParseMode.HTML)
     finally:
         db.close()
 
@@ -543,11 +545,12 @@ async def cmd_approve(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     try:
         item = db.get(ContentQueue, int(content_id))
         if not item:
-            await update.message.reply_text(f"❌ Không tìm thấy content #{content_id}.")
+            await update.message.reply_text(f"❌ Không tìm thấy content <code>#{content_id}</code>.", parse_mode=ParseMode.HTML)
             return
         if item.status in {"approved", "published"}:
             await update.message.reply_text(
-                f"⚠️ Content #{content_id} đang ở trạng thái '{item.status}', không thể duyệt lại."
+                f"⚠️ Content <code>#{content_id}</code> đang ở trạng thái '<b>{item.status}</b>', không thể duyệt lại.",
+                parse_mode=ParseMode.HTML,
             )
             return
         item.status = "approved"
@@ -562,7 +565,7 @@ async def cmd_approve(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             )
         )
         db.commit()
-        await update.message.reply_text(f"✅ Đã duyệt content #{content_id}.")
+        await update.message.reply_text(f"✅ Đã duyệt content <code>#{content_id}</code>.", parse_mode=ParseMode.HTML)
     finally:
         db.close()
 
@@ -580,11 +583,12 @@ async def cmd_reject(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     try:
         item = db.get(ContentQueue, int(content_id))
         if not item:
-            await update.message.reply_text(f"❌ Không tìm thấy content #{content_id}.")
+            await update.message.reply_text(f"❌ Không tìm thấy content <code>#{content_id}</code>.", parse_mode=ParseMode.HTML)
             return
         if item.status == "published":
             await update.message.reply_text(
-                f"⚠️ Content #{content_id} đã published, không thể từ chối."
+                f"⚠️ Content <code>#{content_id}</code> đã <b>published</b>, không thể từ chối.",
+                parse_mode=ParseMode.HTML,
             )
             return
         item.status = "rejected"
@@ -600,7 +604,8 @@ async def cmd_reject(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         )
         db.commit()
         await update.message.reply_text(
-            f"🛑 Đã từ chối content #{content_id}\n• Lý do: {reason}"
+            f"🛑 Đã từ chối content <code>#{content_id}</code><br/>• Lý do: <i>{reason}</i>",
+            parse_mode=ParseMode.HTML,
         )
     finally:
         db.close()
