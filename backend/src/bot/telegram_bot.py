@@ -175,33 +175,55 @@ async def cmd_queue(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     except ValueError:
         await update.message.reply_text("Tham số không hợp lệ. Ví dụ: /queue 1 10")
         return
+    _send_queue_page(update, site_id=site_id, offset=0, limit=limit)
+
+
+def _fetch_pending(site_id: int, offset: int, limit: int) -> list[ContentQueue]:
     db = SessionLocal()
     try:
         rows = (
             db.query(ContentQueue)
             .filter(ContentQueue.site_id == site_id, ContentQueue.status == "pending")
             .order_by(ContentQueue.id.desc())
+            .offset(offset)
             .limit(limit)
             .all()
         )
-        if not rows:
-            await update.message.reply_text("ℹ️ <i>Không có mục chờ duyệt cho site này.</i>", parse_mode=ParseMode.HTML)
-            return
-        # Gửi từng item với nút hành động để thao tác nhanh
-        for r in rows:
-            text = f"<b>#{r.id}</b> • {r.title[:80]}"
-            buttons = [
-                [
-                    InlineKeyboardButton(text="✅ Approve", callback_data=f"approve:{r.id}"),
-                    InlineKeyboardButton(text="🛑 Reject", callback_data=f"reject:{r.id}"),
-                    InlineKeyboardButton(text="📢 Publish", callback_data=f"publish:{r.id}"),
-                ]
-            ]
-            await update.message.reply_text(
-                text, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(buttons)
-            )
+        return rows
     finally:
         db.close()
+
+
+def _send_queue_page(update: Update, site_id: int, offset: int, limit: int) -> None:
+    rows = _fetch_pending(site_id, offset, limit)
+    if not rows:
+        update.message.reply_text(
+            "ℹ️ <i>Không có mục chờ duyệt cho site này.</i>", parse_mode=ParseMode.HTML
+        )
+        return
+    # Gửi danh sách + nút phân trang
+    start = offset + 1
+    end = offset + len(rows)
+    header = f"📥 <b>Pending queue</b> (site={site_id}) — <i>{start}–{end}</i>"
+    update.message.reply_text(header, parse_mode=ParseMode.HTML,
+                              reply_markup=InlineKeyboardMarkup([[
+                                  InlineKeyboardButton("⬅️ Prev", callback_data=f"page:{site_id}:{max(0, offset - limit)}"),
+                                  InlineKeyboardButton("➡️ Next", callback_data=f"page:{site_id}:{offset + limit}"),
+                              ]]))
+    # Gửi từng item với nút hành động + xem nội dung
+    for r in rows:
+        text = f"<b>#{r.id}</b> • {r.title[:80]}"
+        buttons = [
+            [
+                InlineKeyboardButton(text="👁 View", callback_data=f"view:{r.id}"),
+                InlineKeyboardButton(text="✅ Approve", callback_data=f"approve:{r.id}"),
+                InlineKeyboardButton(text="🛑 Reject", callback_data=f"reject:{r.id}"),
+                InlineKeyboardButton(text="📢 Publish", callback_data=f"publish:{r.id}"),
+            ]
+        ]
+        update.message.reply_text(
+            text, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(buttons)
+        )
 
 
 async def cmd_publish(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -328,6 +350,21 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             await query.edit_message_text(msg, parse_mode=ParseMode.HTML)
             return
 
+        if action == "view":
+            item = db.get(ContentQueue, content_id)
+            if not item:
+                await query.edit_message_text(
+                    f"❌ Không tìm thấy content <code>#{content_id}</code>.", parse_mode=ParseMode.HTML
+                )
+                return
+            body = (item.body or "").strip()
+            snippet = (body[:900] + ("…" if len(body) > 900 else "")) if body else "(trống)"
+            await query.edit_message_text(
+                f"<b>#{content_id}</b> • {item.title[:80]}\n<code>{snippet}</code>",
+                parse_mode=ParseMode.HTML,
+            )
+            return
+
         if action == "reject":
             # Hiển thị gợi ý lý do nhanh
             buttons = [[
@@ -377,6 +414,41 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
         if action == "cancel":
             await query.edit_message_text("⏹ Đã hủy thao tác.")
+            return
+
+        if action == "page":
+            # callback for pagination from header
+            # reuse same chat by sending a new page header
+            site_id = content_id  # in this context content_id is site_id (packed earlier)
+            try:
+                new_offset = int(extra or 0)
+            except Exception:
+                new_offset = 0
+            # cannot edit header message easily with list below; simply acknowledge
+            await query.edit_message_text("🔄 Đang tải trang...")
+            # Send new page in chat
+            chat = update.effective_chat
+            if chat:
+                # Build a fake Update-like call using context.bot
+                from telegram import Message
+                # Send header
+                header = f"📥 <b>Pending queue</b> (site={site_id}) — <i>{new_offset+1}…</i>"
+                await context.bot.send_message(chat.id, header, parse_mode=ParseMode.HTML,
+                    reply_markup=InlineKeyboardMarkup([[
+                        InlineKeyboardButton("⬅️ Prev", callback_data=f"page:{site_id}:{max(0, new_offset - 10)}"),
+                        InlineKeyboardButton("➡️ Next", callback_data=f"page:{site_id}:{new_offset + 10}"),
+                    ]]))
+                rows = _fetch_pending(site_id, new_offset, 10)
+                for r in rows:
+                    text = f"<b>#{r.id}</b> • {r.title[:80]}"
+                    buttons = [[
+                        InlineKeyboardButton(text="👁 View", callback_data=f"view:{r.id}"),
+                        InlineKeyboardButton(text="✅ Approve", callback_data=f"approve:{r.id}"),
+                        InlineKeyboardButton(text="🛑 Reject", callback_data=f"reject:{r.id}"),
+                        InlineKeyboardButton(text="📢 Publish", callback_data=f"publish:{r.id}"),
+                    ]]
+                    await context.bot.send_message(chat.id, text, parse_mode=ParseMode.HTML,
+                        reply_markup=InlineKeyboardMarkup(buttons))
             return
 
         await query.edit_message_text("❌ Hành động không hỗ trợ.")
