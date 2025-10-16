@@ -1,11 +1,12 @@
 import asyncio
 import os
+from datetime import datetime
 
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 
 from src.database.session import SessionLocal
-from src.database.models import Site
+from src.database.models import Site, ContentQueue
 
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -31,7 +32,18 @@ async def cmd_approve(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         await update.message.reply_text("Cách dùng: /approve <content_id>")
         return
     content_id = args[0]
-    await update.message.reply_text(f"[STUB] Đã nhận yêu cầu duyệt content #{content_id}.")
+    db = SessionLocal()
+    try:
+        item = db.get(ContentQueue, int(content_id))
+        if not item:
+            await update.message.reply_text(f"Không tìm thấy content #{content_id}.")
+            return
+        item.status = "approved"
+        item.updated_at = datetime.utcnow()
+        db.commit()
+        await update.message.reply_text(f"Đã duyệt content #{content_id}.")
+    finally:
+        db.close()
 
 
 async def cmd_reject(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -41,9 +53,20 @@ async def cmd_reject(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         return
     content_id = args[0]
     reason = " ".join(args[1:]) if len(args) > 1 else "không nêu lý do"
-    await update.message.reply_text(
-        f"[STUB] Đã nhận yêu cầu từ chối content #{content_id} — lý do: {reason}."
-    )
+    db = SessionLocal()
+    try:
+        item = db.get(ContentQueue, int(content_id))
+        if not item:
+            await update.message.reply_text(f"Không tìm thấy content #{content_id}.")
+            return
+        item.status = "rejected"
+        item.updated_at = datetime.utcnow()
+        db.commit()
+        await update.message.reply_text(
+            f"Đã từ chối content #{content_id} — lý do: {reason}."
+        )
+    finally:
+        db.close()
 
 
 def build_app() -> Application:
