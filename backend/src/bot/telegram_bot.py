@@ -362,6 +362,66 @@ async def cmd_health(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     except Exception as e:
         await update.message.reply_text(f"❌ Backend unreachable: {e}")
 
+
+def _bot_api(method: str, payload: dict) -> None:
+    token = os.getenv("TELEGRAM_TOKEN")
+    if not token:
+        return
+    try:
+        requests.post(f"https://api.telegram.org/bot{token}/{method}", json=payload, timeout=5)
+    except Exception:
+        pass
+
+
+def _set_default_commands_menu() -> None:
+    commands = [
+        {"command": "help", "description": "Danh sách lệnh"},
+        {"command": "status", "description": "Thống kê hôm nay"},
+        {"command": "sites", "description": "Liệt kê site"},
+        {"command": "queue", "description": "Xem queue"},
+        {"command": "approve", "description": "Duyệt"},
+        {"command": "reject", "description": "Từ chối"},
+        {"command": "publish", "description": "Publish"},
+    ]
+    _bot_api("setMyCommands", {"commands": commands})
+
+
+def _set_admin_commands_for_user(user_id: int) -> None:
+    # Scope per-user: chat_member in 1:1 chat
+    commands = [
+        {"command": "help", "description": "Danh sách lệnh"},
+        {"command": "status", "description": "Thống kê hôm nay"},
+        {"command": "sites", "description": "Liệt kê site"},
+        {"command": "queue", "description": "Xem queue"},
+        {"command": "approve", "description": "Duyệt"},
+        {"command": "reject", "description": "Từ chối"},
+        {"command": "publish", "description": "Publish"},
+        {"command": "setquota", "description": "Đặt quota"},
+        {"command": "sethours", "description": "Khung giờ"},
+        {"command": "toggleauto", "description": "Bật/tắt auto"},
+        {"command": "find", "description": "Tìm nội dung"},
+        {"command": "health", "description": "Kiểm tra hệ thống"},
+    ]
+    scope = {"type": "chat_member", "chat_id": user_id, "user_id": user_id}
+    _bot_api("setMyCommands", {"scope": scope, "commands": commands})
+
+
+def _refresh_commands_menu_for_all_admins() -> None:
+    db = SessionLocal()
+    try:
+        _set_default_commands_menu()
+        # owner
+        if _OWNER_ID:
+            _set_admin_commands_for_user(_OWNER_ID)
+        # env admins
+        for uid in _ENV_ADMIN_IDS:
+            _set_admin_commands_for_user(uid)
+        # db admins
+        for row in db.query(TelegramAdmin).all():
+            _set_admin_commands_for_user(int(row.user_id))
+    finally:
+        db.close()
+
 async def cmd_sites(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     db = SessionLocal()
     try:
@@ -555,6 +615,8 @@ def build_app() -> Application:
     _ENV_ADMIN_IDS = _load_env_admin_ids()
     _OWNER_ID = _load_owner_id()
     app = Application.builder().token(token).build()
+    # Set commands menu asynchronously after startup
+    _refresh_commands_menu_for_all_admins()
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("sites", cmd_sites))
     app.add_handler(CommandHandler("help", cmd_help))
