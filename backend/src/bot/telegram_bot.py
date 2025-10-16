@@ -2,10 +2,10 @@ import asyncio
 import os
 from datetime import datetime, timedelta, timezone
 
-from telegram import Update
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 import requests
 from telegram.constants import ParseMode
-from telegram.ext import Application, CommandHandler, ContextTypes
+from telegram.ext import Application, CommandHandler, ContextTypes, CallbackQueryHandler
 
 from src.database.session import SessionLocal
 from src.database.models import Site, ContentQueue, TelegramAdmin, AuditLog
@@ -187,8 +187,19 @@ async def cmd_queue(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if not rows:
             await update.message.reply_text("ℹ️ <i>Không có mục chờ duyệt cho site này.</i>", parse_mode=ParseMode.HTML)
             return
-        lines = [f"<b>#{r.id}</b> • {r.title[:80]}" for r in rows]
-        await update.message.reply_text("📥 <b>Pending queue</b>\n" + "\n".join(lines), parse_mode=ParseMode.HTML)
+        # Gửi từng item với nút hành động để thao tác nhanh
+        for r in rows:
+            text = f"<b>#{r.id}</b> • {r.title[:80]}"
+            buttons = [
+                [
+                    InlineKeyboardButton(text="✅ Approve", callback_data=f"approve:{r.id}"),
+                    InlineKeyboardButton(text="🛑 Reject", callback_data=f"reject:{r.id}"),
+                    InlineKeyboardButton(text="📢 Publish", callback_data=f"publish:{r.id}"),
+                ]
+            ]
+            await update.message.reply_text(
+                text, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(buttons)
+            )
     finally:
         db.close()
 
@@ -226,6 +237,99 @@ async def cmd_publish(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         )
         db.commit()
         await update.message.reply_text(f"📢 Đã publish content <code>#{content_id}</code>.", parse_mode=ParseMode.HTML)
+    finally:
+        db.close()
+
+
+def _approve_item(db: SessionLocal, content_id: int, actor_user_id: int) -> tuple[bool, str]:
+    item = db.get(ContentQueue, content_id)
+    if not item:
+        return False, f"❌ Không tìm thấy content <code>#{content_id}</code>."
+    if item.status in {"approved", "published"}:
+        return (
+            False,
+            f"⚠️ Content <code>#{content_id}</code> đang ở trạng thái '<b>{item.status}</b>', không thể duyệt lại.",
+        )
+    item.status = "approved"
+    item.updated_at = datetime.utcnow()
+    db.add(
+        AuditLog(
+            actor_user_id=actor_user_id,
+            action="approve",
+            target_type="content_queue",
+            target_id=item.id,
+            note=None,
+        )
+    )
+    db.commit()
+    return True, f"✅ Đã duyệt content <code>#{content_id}</code>."
+
+
+def _reject_item(db: SessionLocal, content_id: int, actor_user_id: int, reason: str) -> tuple[bool, str]:
+    item = db.get(ContentQueue, content_id)
+    if not item:
+        return False, f"❌ Không tìm thấy content <code>#{content_id}</code>."
+    if item.status == "published":
+        return False, f"⚠️ Content <code>#{content_id}</code> đã <b>published</b>, không thể từ chối."
+    item.status = "rejected"
+    item.updated_at = datetime.utcnow()
+    db.add(
+        AuditLog(
+            actor_user_id=actor_user_id,
+            action="reject",
+            target_type="content_queue",
+            target_id=item.id,
+            note=reason,
+        )
+    )
+    db.commit()
+    return True, f"🛑 Đã từ chối content <code>#{content_id}</code><br/>• Lý do: <i>{reason}</i>"
+
+
+def _publish_item(db: SessionLocal, content_id: int, actor_user_id: int) -> tuple[bool, str]:
+    item = db.get(ContentQueue, content_id)
+    if not item:
+        return False, f"❌ Không tìm thấy content <code>#{content_id}</code>."
+    if item.status == "published":
+        return False, "⚠️ Mục này đã <b>published</b> rồi."
+    if item.status != "approved":
+        return False, "⚠️ Chỉ publish mục đã <b>Approved</b>."
+    item.status = "published"
+    item.updated_at = datetime.utcnow()
+    db.add(
+        AuditLog(
+            actor_user_id=actor_user_id,
+            action="publish",
+            target_type="content_queue",
+            target_id=item.id,
+            note=None,
+        )
+    )
+    db.commit()
+    return True, f"📢 Đã publish content <code>#{content_id}</code>."
+
+
+async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    data = query.data or ""
+    try:
+        action, id_str = data.split(":", 1)
+        content_id = int(id_str)
+    except Exception:
+        await query.edit_message_text("❌ Dữ liệu không hợp lệ.")
+        return
+    db = SessionLocal()
+    try:
+        if action == "approve":
+            ok, msg = _approve_item(db, content_id, query.from_user.id)
+        elif action == "reject":
+            ok, msg = _reject_item(db, content_id, query.from_user.id, "via_button")
+        elif action == "publish":
+            ok, msg = _publish_item(db, content_id, query.from_user.id)
+        else:
+            ok, msg = False, "❌ Hành động không hỗ trợ."
+        await query.edit_message_text(msg, parse_mode=ParseMode.HTML)
     finally:
         db.close()
 
@@ -641,6 +745,7 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("health", cmd_health))
     app.add_handler(CommandHandler("approve", cmd_approve))
     app.add_handler(CommandHandler("reject", cmd_reject))
+    app.add_handler(CallbackQueryHandler(on_action_button))
     return app
 
 
