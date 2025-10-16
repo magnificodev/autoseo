@@ -18,6 +18,7 @@ export default function AuditLogsPage() {
   const [action, setAction] = useState<string>('')
   const [start, setStart] = useState<string>('')
   const [end, setEnd] = useState<string>('')
+  const [downloading, setDownloading] = useState<boolean>(false)
 
   async function loadLogs() {
     try {
@@ -67,6 +68,51 @@ export default function AuditLogsPage() {
           style={{ padding: 8 }}
         />
         <button type="submit" style={{ padding: '8px 12px' }}>Filter</button>
+        <button
+          type="button"
+          style={{ padding: '8px 12px' }}
+          disabled={downloading}
+          onClick={async () => {
+            try {
+              setDownloading(true)
+              // Build CSV from current filters
+              const params = new URLSearchParams()
+              params.set('limit', '500')
+              if (action.trim()) params.set('action', action.trim())
+              if (start.trim()) params.set('start', start.trim())
+              if (end.trim()) params.set('end', end.trim())
+              const res = await fetch(`/api/audit-logs?${params.toString()}`, { credentials: 'include' })
+              if (!res.ok) throw new Error('Failed to fetch logs for CSV')
+              const data: AuditLog[] = await res.json()
+
+              const headers = ['id','actor_user_id','action','target_type','target_id','note','created_at']
+              const escape = (v: any) => {
+                const s = v === null || v === undefined ? '' : String(v)
+                if (s.includes('"') || s.includes(',') || s.includes('\n')) {
+                  return '"' + s.replace(/"/g, '""') + '"'
+                }
+                return s
+              }
+              const rows = data.map(r => [r.id, r.actor_user_id, r.action, r.target_type, r.target_id, r.note ?? '', r.created_at ?? ''])
+              const csv = [headers.join(','), ...rows.map(row => row.map(escape).join(','))].join('\n')
+              const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+              const url = URL.createObjectURL(blob)
+              const a = document.createElement('a')
+              a.href = url
+              a.download = `audit_logs_${Date.now()}.csv`
+              document.body.appendChild(a)
+              a.click()
+              document.body.removeChild(a)
+              URL.revokeObjectURL(url)
+            } catch (e: any) {
+              setError(e.message || 'Export error')
+            } finally {
+              setDownloading(false)
+            }
+          }}
+        >
+          {downloading ? 'Exporting...' : 'Export CSV'}
+        </button>
       </form>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 12 }}>
