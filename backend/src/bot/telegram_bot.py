@@ -6,7 +6,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 
 from src.database.session import SessionLocal
-from src.database.models import Site, ContentQueue, TelegramAdmin
+from src.database.models import Site, ContentQueue, TelegramAdmin, AuditLog
 
 
 _ENV_ADMIN_IDS: set[int] = set()
@@ -174,8 +174,20 @@ async def cmd_approve(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         if not item:
             await update.message.reply_text(f"Không tìm thấy content #{content_id}.")
             return
+        if item.status in {"approved", "published"}:
+            await update.message.reply_text(f"Content #{content_id} đã ở trạng thái {item.status}, không thể duyệt lại.")
+            return
         item.status = "approved"
         item.updated_at = datetime.utcnow()
+        db.add(
+            AuditLog(
+                actor_user_id=update.effective_user.id,
+                action="approve",
+                target_type="content_queue",
+                target_id=item.id,
+                note=None,
+            )
+        )
         db.commit()
         await update.message.reply_text(f"Đã duyệt content #{content_id}.")
     finally:
@@ -197,8 +209,20 @@ async def cmd_reject(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         if not item:
             await update.message.reply_text(f"Không tìm thấy content #{content_id}.")
             return
+        if item.status == "published":
+            await update.message.reply_text(f"Content #{content_id} đã published, không thể từ chối.")
+            return
         item.status = "rejected"
         item.updated_at = datetime.utcnow()
+        db.add(
+            AuditLog(
+                actor_user_id=update.effective_user.id,
+                action="reject",
+                target_type="content_queue",
+                target_id=item.id,
+                note=reason,
+            )
+        )
         db.commit()
         await update.message.reply_text(
             f"Đã từ chối content #{content_id} — lý do: {reason}."

@@ -80,3 +80,15 @@ class TelegramAdmin(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(BigInteger, unique=True, nullable=False, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True)
+    actor_user_id = Column(BigInteger, nullable=False)
+    action = Column(String(64), nullable=False)
+    target_type = Column(String(64), nullable=False)
+    target_id = Column(Integer, nullable=False)
+    note = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
