@@ -20,6 +20,13 @@ export default function AuditLogsPage() {
   const [end, setEnd] = useState<string>('')
   const [downloading, setDownloading] = useState<boolean>(false)
 
+  async function safeJson(res: Response) {
+    const ct = res.headers.get('content-type') || ''
+    if (ct.includes('application/json')) return res.json()
+    const text = await res.text()
+    throw new Error(text.slice(0, 300))
+  }
+
   async function loadLogs() {
     try {
       setError(null)
@@ -28,9 +35,9 @@ export default function AuditLogsPage() {
       if (action.trim()) params.set('action', action.trim())
       if (start.trim()) params.set('start', start.trim())
       if (end.trim()) params.set('end', end.trim())
-      const res = await fetch(`/api/audit-logs?${params.toString()}`, { credentials: 'include' })
-      if (!res.ok) throw new Error('Failed to load audit logs')
-      const data = await res.json()
+      const res = await fetch(`/api/audit-logs/?${params.toString()}`, { credentials: 'include' })
+      if (!res.ok) throw new Error(await res.text())
+      const data = await safeJson(res)
       setLogs(data)
     } catch (e: any) {
       setError(e.message || 'Error')
@@ -81,9 +88,9 @@ export default function AuditLogsPage() {
               if (action.trim()) params.set('action', action.trim())
               if (start.trim()) params.set('start', start.trim())
               if (end.trim()) params.set('end', end.trim())
-              const res = await fetch(`/api/audit-logs?${params.toString()}`, { credentials: 'include' })
-              if (!res.ok) throw new Error('Failed to fetch logs for CSV')
-              const data: AuditLog[] = await res.json()
+              const res = await fetch(`/api/audit-logs/?${params.toString()}`, { credentials: 'include' })
+              if (!res.ok) throw new Error(await res.text())
+              const data: AuditLog[] = await safeJson(res)
 
               const headers = ['id','actor_user_id','action','target_type','target_id','note','created_at']
               const escape = (v: any) => {
