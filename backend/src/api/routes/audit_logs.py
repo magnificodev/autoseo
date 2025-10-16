@@ -38,18 +38,16 @@ def list_audit_logs(
     q = db.query(AuditLog)
     if action:
         q = q.filter(AuditLog.action == action)
-    if start:
-        try:
+    try:
+        if start:
             dt = datetime.fromisoformat(start)
-        except ValueError:
-            raise HTTPException(status_code=422, detail="invalid start datetime format")
-        q = q.filter(AuditLog.created_at >= dt)
-    if end:
-        try:
+            q = q.filter(AuditLog.created_at >= dt)
+        if end:
             dt = datetime.fromisoformat(end)
-        except ValueError:
-            raise HTTPException(status_code=422, detail="invalid end datetime format")
-        q = q.filter(AuditLog.created_at <= dt)
+            q = q.filter(AuditLog.created_at <= dt)
+    except Exception:
+        # Tránh 500: trả 422 rõ ràng thay vì internal_error
+        raise HTTPException(status_code=422, detail="invalid datetime format")
     rows = q.order_by(AuditLog.id.desc()).limit(limit).all()
     return rows
 

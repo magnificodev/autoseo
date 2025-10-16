@@ -506,6 +506,13 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             )
             return
 
+        if action == "reload_admins_cb":
+            global _ENV_ADMIN_IDS, _OWNER_ID
+            _ENV_ADMIN_IDS = _load_env_admin_ids()
+            _OWNER_ID = _load_owner_id()
+            await query.edit_message_text("🔄 Đã nạp lại cấu hình admins từ env.")
+            return
+
         if action == "page":
             # callback for pagination from header: data format page:<site_id>:<offset>
             try:
@@ -842,6 +849,32 @@ async def cmd_myid(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             [[InlineKeyboardButton(text="Copy", callback_data=f"copy_myid:{user.id}")]]
         ),
     )
+
+
+async def cmd_profile(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user = update.effective_user
+    if user is None:
+        return
+    uid = user.id
+    owner = _OWNER_ID is not None and uid == _OWNER_ID
+    admin = _is_admin_user_id(uid)
+    owner_badge = "✅" if owner else "❌"
+    admin_badge = "✅" if admin else "❌"
+    owner_id = _OWNER_ID if _OWNER_ID is not None else "(none)"
+    msg = (
+        "👤 <b>Hồ sơ</b>\n"
+        f"• ID: <code>{uid}</code>\n"
+        f"• Owner: <b>{owner_badge}</b>\n"
+        f"• Admin: <b>{admin_badge}</b>\n"
+        f"• OWNER_ID đang nạp: <code>{owner_id}</code>"
+    )
+    kb = [
+        [
+            InlineKeyboardButton(text="Copy ID", callback_data=f"copy_myid:{uid}"),
+            InlineKeyboardButton(text="Reload Admins", callback_data="reload_admins_cb:0"),
+        ]
+    ]
+    await update.message.reply_text(msg, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(kb))
 
 
 async def cmd_reload_admins(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
