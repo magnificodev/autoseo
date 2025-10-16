@@ -182,18 +182,21 @@ async def cmd_queue(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         site_id = int(args[0])
         limit = int(args[1]) if len(args) > 1 else 10
         limit = max(1, min(limit, 50))
+        status = (args[2].lower() if len(args) > 2 else "pending").strip()
+        if status not in {"pending", "approved"}:
+            status = "pending"
     except ValueError:
         await update.message.reply_text("Tham số không hợp lệ. Ví dụ: /queue 1 10")
         return
-    await _send_queue_page(update, site_id=site_id, offset=0, limit=limit)
+    await _send_queue_page(update, site_id=site_id, offset=0, limit=limit, status=status)
 
 
-def _fetch_pending(site_id: int, offset: int, limit: int) -> list[ContentQueue]:
+def _fetch_by_status(site_id: int, status: str, offset: int, limit: int) -> list[ContentQueue]:
     db = SessionLocal()
     try:
         rows = (
             db.query(ContentQueue)
-            .filter(ContentQueue.site_id == site_id, ContentQueue.status == "pending")
+            .filter(ContentQueue.site_id == site_id, ContentQueue.status == status)
             .order_by(ContentQueue.id.desc())
             .offset(offset)
             .limit(limit)
@@ -204,8 +207,8 @@ def _fetch_pending(site_id: int, offset: int, limit: int) -> list[ContentQueue]:
         db.close()
 
 
-async def _send_queue_page(update: Update, site_id: int, offset: int, limit: int) -> None:
-    rows = _fetch_pending(site_id, offset, limit)
+async def _send_queue_page(update: Update, site_id: int, offset: int, limit: int, status: str = "pending") -> None:
+    rows = _fetch_by_status(site_id, status, offset, limit)
     if not rows:
         await update.message.reply_text(
             "ℹ️ <i>Không có mục chờ duyệt cho site này.</i>", parse_mode=ParseMode.HTML
@@ -214,15 +217,16 @@ async def _send_queue_page(update: Update, site_id: int, offset: int, limit: int
     # Gửi danh sách + nút phân trang
     start = offset + 1
     end = offset + len(rows)
-    header = f"📥 <b>Pending queue</b> (site={site_id}) — <i>{start}–{end}</i>"
+    title = "Pending" if status == "pending" else "Approved"
+    header = f"📥 <b>{title} queue</b> (site={site_id}) — <i>{start}–{end}</i>"
     # Header với phân trang và bulk actions
     header_rows = [
         [
             InlineKeyboardButton(
-                "⬅️ Prev", callback_data=f"page:{site_id}:{max(0, offset - limit)}"
+                "⬅️ Prev", callback_data=f"page:{site_id}:{max(0, offset - limit)}:{limit}:{status}"
             ),
             InlineKeyboardButton(
-                "➡️ Next", callback_data=f"page:{site_id}:{offset + limit}"
+                "➡️ Next", callback_data=f"page:{site_id}:{offset + limit}:{limit}:{status}"
             ),
         ],
         [
@@ -241,6 +245,22 @@ async def _send_queue_page(update: Update, site_id: int, offset: int, limit: int
                 "🛑 Bulk Reject 5", callback_data=f"bulk_reject_pick:{site_id}:{offset}:{limit}:5"
             ),
         ],
+        [
+            InlineKeyboardButton(
+                "📢 Bulk Publish 3", callback_data=f"bulk_publish:{site_id}:{offset}:{limit}:3"
+            ),
+            InlineKeyboardButton(
+                "📢 Bulk Publish 5", callback_data=f"bulk_publish:{site_id}:{offset}:{limit}:5"
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                "Filter: Pending", callback_data=f"filter:{site_id}:{offset}:{limit}:pending"
+            ),
+            InlineKeyboardButton(
+                "Filter: Approved", callback_data=f"filter:{site_id}:{offset}:{limit}:approved"
+            ),
+        ],
     ]
     await update.message.reply_text(
         header,
@@ -253,16 +273,16 @@ async def _send_queue_page(update: Update, site_id: int, offset: int, limit: int
         buttons = [
             [
                 InlineKeyboardButton(
-                    text="👁 View", callback_data=f"view:{r.id}:{site_id}:{offset}:{limit}"
+                    text="👁 View", callback_data=f"view:{r.id}:{site_id}:{offset}:{limit}:{status}"
                 ),
                 InlineKeyboardButton(
-                    text="✅ Approve", callback_data=f"approve:{r.id}:{site_id}:{offset}:{limit}"
+                    text="✅ Approve", callback_data=f"approve:{r.id}:{site_id}:{offset}:{limit}:{status}"
                 ),
                 InlineKeyboardButton(
-                    text="🛑 Reject", callback_data=f"reject:{r.id}:{site_id}:{offset}:{limit}"
+                    text="🛑 Reject", callback_data=f"reject:{r.id}:{site_id}:{offset}:{limit}:{status}"
                 ),
                 InlineKeyboardButton(
-                    text="📢 Publish", callback_data=f"publish:{r.id}:{site_id}:{offset}:{limit}"
+                    text="📢 Publish", callback_data=f"publish:{r.id}:{site_id}:{offset}:{limit}:{status}"
                 ),
             ]
         ]
@@ -475,6 +495,8 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             try:
                 site_id = int(parts[1])
                 new_offset = int(parts[2])
+                new_limit = int(parts[3]) if len(parts) > 3 else 10
+                new_status = parts[4] if len(parts) > 4 else "pending"
             except Exception:
                 await query.edit_message_text("❌ Tham số phân trang không hợp lệ.")
                 return
@@ -482,8 +504,18 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             # Gửi trang mới vào chat hiện tại
             chat = update.effective_chat
             if chat:
-                # Gửi bằng bot: chúng ta gửi message mới, không sửa lại header cũ
-                await _send_queue_page(update, site_id=site_id, offset=new_offset, limit=limit_ctx or 10)
+                # Gửi message mới, giữ nguyên thread
+                await _send_queue_page(update, site_id=site_id, offset=new_offset, limit=new_limit or 10, status=new_status)
+            return
+
+        if action == "filter":
+            try:
+                site_id = int(parts[1]); new_offset = int(parts[2]); new_limit = int(parts[3]); new_status = parts[4]
+            except Exception:
+                await query.edit_message_text("❌ Tham số filter không hợp lệ.")
+                return
+            await query.edit_message_text("🔄 Đang lọc...")
+            await _send_queue_page(update, site_id=site_id, offset=new_offset, limit=new_limit, status=new_status)
             return
 
         if action in {"bulk_approve", "bulk_reject_pick"}:
@@ -527,7 +559,17 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
                 return
             reason_map = {"duplicate":"duplicate","lowquality":"low_quality","irrelevant":"irrelevant","noreason":""}
             reason = reason_map.get(reason_key, reason_key)
-            rows = _fetch_pending(site_id, offset, count)
+            rows = _fetch_by_status(site_id, "approved", offset, count)
+            pub = 0
+            for r in rows:
+                ok, _ = _publish_item(db, r.id, query.from_user.id)
+                if ok:
+                    pub += 1
+            await query.edit_message_text(
+                f"📢 Đã publish {pub}/{count} mục (Approved).",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data=f"page:{site_id}:{offset}:{limit}:approved")]]),
+            )
+            return
             rej = 0
             for r in rows:
                 ok, _ = _reject_item(db, r.id, query.from_user.id, reason)
