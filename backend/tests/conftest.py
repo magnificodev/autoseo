@@ -14,8 +14,23 @@ os.environ.setdefault("BACKEND_CORS_ORIGINS", "http://localhost:3000")
 os.environ.setdefault("JWT_SECRET", "test-secret")
 
 from src.api.main import app  # noqa: E402
+from src.database.session import SessionLocal, engine  # noqa: E402
+from src.database.models import Base  # noqa: E402
 
 
 @pytest.fixture(scope="session")
 def client():
     return TestClient(app)
+
+
+@pytest.fixture()
+def sqlite_db():
+    # Ensure tables exist for the SQLite test database
+    Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+        # Optional cleanup between tests: drop all to keep isolation lightweight
+        Base.metadata.drop_all(bind=engine)
