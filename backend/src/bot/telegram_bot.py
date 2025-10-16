@@ -101,7 +101,7 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "• /queue <site_id> [n] – xem queue chờ duyệt",
         "• /approve <id> – duyệt nội dung",
         "• /reject <id> [lý_do] – từ chối",
-        "• /publish <id> – publish ngay (sắp có)",
+        "• /publish <id> – publish ngay",
         "• /myid, /whoami – xem ID & quyền",
         "• /admins – owner/env/db admins",
         "• /grant <user_id> /revoke <user_id> – quản trị (owner)",
@@ -152,6 +152,74 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     finally:
         db.close()
 
+
+async def cmd_queue(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not await _ensure_admin(update):
+        return
+    args = context.args if context.args else []
+    if len(args) < 1:
+        await update.message.reply_text("Cách dùng: /queue <site_id> [n=10]")
+        return
+    try:
+        site_id = int(args[0])
+        limit = int(args[1]) if len(args) > 1 else 10
+        limit = max(1, min(limit, 50))
+    except ValueError:
+        await update.message.reply_text("Tham số không hợp lệ. Ví dụ: /queue 1 10")
+        return
+    db = SessionLocal()
+    try:
+        rows = (
+            db.query(ContentQueue)
+            .filter(ContentQueue.site_id == site_id, ContentQueue.status == "pending")
+            .order_by(ContentQueue.id.desc())
+            .limit(limit)
+            .all()
+        )
+        if not rows:
+            await update.message.reply_text("ℹ️ Không có mục chờ duyệt cho site này.")
+            return
+        lines = [f"#{r.id} • {r.title[:80]}" for r in rows]
+        await update.message.reply_text("📥 Pending queue:\n" + "\n".join(lines))
+    finally:
+        db.close()
+
+
+async def cmd_publish(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not await _ensure_admin(update):
+        return
+    args = context.args if context.args else []
+    if len(args) < 1:
+        await update.message.reply_text("Cách dùng: /publish <content_id>")
+        return
+    content_id = args[0]
+    db = SessionLocal()
+    try:
+        item = db.get(ContentQueue, int(content_id))
+        if not item:
+            await update.message.reply_text(f"❌ Không tìm thấy content #{content_id}.")
+            return
+        if item.status == "published":
+            await update.message.reply_text("⚠️ Mục này đã published rồi.")
+            return
+        if item.status != "approved":
+            await update.message.reply_text("⚠️ Chỉ publish mục đã Approved.")
+            return
+        item.status = "published"
+        item.updated_at = datetime.utcnow()
+        db.add(
+            AuditLog(
+                actor_user_id=update.effective_user.id,
+                action="publish",
+                target_type="content_queue",
+                target_id=item.id,
+                note=None,
+            )
+        )
+        db.commit()
+        await update.message.reply_text(f"📢 Đã publish content #{content_id}.")
+    finally:
+        db.close()
 
 async def cmd_sites(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     db = SessionLocal()
@@ -356,6 +424,8 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("admins", cmd_admins))
     app.add_handler(CommandHandler("grant", cmd_grant))
     app.add_handler(CommandHandler("revoke", cmd_revoke_admin))
+    app.add_handler(CommandHandler("queue", cmd_queue))
+    app.add_handler(CommandHandler("publish", cmd_publish))
     app.add_handler(CommandHandler("approve", cmd_approve))
     app.add_handler(CommandHandler("reject", cmd_reject))
     return app
