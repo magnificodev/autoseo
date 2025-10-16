@@ -1,6 +1,6 @@
 import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy.exc import OperationalError
@@ -11,12 +11,15 @@ from src.api.routes import keywords as keywords_router
 from src.api.routes import scheduler as scheduler_router
 from src.api.routes import sites as sites_router
 from src.database.session import engine
+from src.core.settings import settings
+from src.core.logging import configure_json_logging
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Autoseo Backend")
+    configure_json_logging()
+    app = FastAPI(title=settings.project_name)
 
-    cors_origins = os.getenv("BACKEND_CORS_ORIGINS", "http://localhost:3000").split(",")
+    cors_origins = settings.backend_cors_origins.split(",")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[origin.strip() for origin in cors_origins if origin.strip()],
@@ -42,6 +45,12 @@ def create_app() -> FastAPI:
         except OperationalError:
             db_status = "degraded"
         return {"status": "ok", "db": db_status}
+
+    @app.middleware("http")
+    async def add_request_id(request: Request, call_next):
+        response = await call_next(request)
+        # Placeholder for future correlation-id
+        return response
 
     return app
 
