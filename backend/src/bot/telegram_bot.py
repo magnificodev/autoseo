@@ -215,10 +215,10 @@ def _send_queue_page(update: Update, site_id: int, offset: int, limit: int) -> N
         text = f"<b>#{r.id}</b> • {r.title[:80]}"
         buttons = [
             [
-                InlineKeyboardButton(text="👁 View", callback_data=f"view:{r.id}"),
-                InlineKeyboardButton(text="✅ Approve", callback_data=f"approve:{r.id}"),
-                InlineKeyboardButton(text="🛑 Reject", callback_data=f"reject:{r.id}"),
-                InlineKeyboardButton(text="📢 Publish", callback_data=f"publish:{r.id}"),
+                InlineKeyboardButton(text="👁 View", callback_data=f"view:{r.id}:{site_id}:{offset}:{limit}"),
+                InlineKeyboardButton(text="✅ Approve", callback_data=f"approve:{r.id}:{site_id}:{offset}:{limit}"),
+                InlineKeyboardButton(text="🛑 Reject", callback_data=f"reject:{r.id}:{site_id}:{offset}:{limit}"),
+                InlineKeyboardButton(text="📢 Publish", callback_data=f"publish:{r.id}:{site_id}:{offset}:{limit}"),
             ]
         ]
         update.message.reply_text(
@@ -339,7 +339,10 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         parts = data.split(":")
         action = parts[0]
         content_id = int(parts[1]) if len(parts) > 1 else 0
-        extra = parts[2] if len(parts) > 2 else None
+        site_ctx = int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else None
+        offset_ctx = int(parts[3]) if len(parts) > 3 and parts[3].lstrip("-").isdigit() else 0
+        limit_ctx = int(parts[4]) if len(parts) > 4 and parts[4].isdigit() else 10
+        extra = parts[5] if len(parts) > 5 else None
     except Exception:
         await query.edit_message_text("❌ Dữ liệu không hợp lệ.")
         return
@@ -347,7 +350,8 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     try:
         if action == "approve":
             ok, msg = _approve_item(db, content_id, query.from_user.id)
-            await query.edit_message_text(msg, parse_mode=ParseMode.HTML)
+            back = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data=f"page:{site_ctx}:{offset_ctx}")]]) if site_ctx is not None else None
+            await query.edit_message_text(msg, parse_mode=ParseMode.HTML, reply_markup=back)
             return
 
         if action == "view":
@@ -359,21 +363,23 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
                 return
             body = (item.body or "").strip()
             snippet = (body[:900] + ("…" if len(body) > 900 else "")) if body else "(trống)"
+            back = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data=f"page:{site_ctx}:{offset_ctx}")]]) if site_ctx is not None else None
             await query.edit_message_text(
                 f"<b>#{content_id}</b> • {item.title[:80]}\n<code>{snippet}</code>",
                 parse_mode=ParseMode.HTML,
+                reply_markup=back,
             )
             return
 
         if action == "reject":
             # Hiển thị gợi ý lý do nhanh
             buttons = [[
-                InlineKeyboardButton(text="Duplicate", callback_data=f"confirm_reject:{content_id}:duplicate"),
-                InlineKeyboardButton(text="LowQuality", callback_data=f"confirm_reject:{content_id}:lowquality"),
-                InlineKeyboardButton(text="Irrelevant", callback_data=f"confirm_reject:{content_id}:irrelevant"),
+                InlineKeyboardButton(text="Duplicate", callback_data=f"confirm_reject:{content_id}:{site_ctx}:{offset_ctx}:{limit_ctx}:duplicate"),
+                InlineKeyboardButton(text="LowQuality", callback_data=f"confirm_reject:{content_id}:{site_ctx}:{offset_ctx}:{limit_ctx}:lowquality"),
+                InlineKeyboardButton(text="Irrelevant", callback_data=f"confirm_reject:{content_id}:{site_ctx}:{offset_ctx}:{limit_ctx}:irrelevant"),
             ], [
-                InlineKeyboardButton(text="NoReason", callback_data=f"confirm_reject:{content_id}:noreason"),
-                InlineKeyboardButton(text="Cancel", callback_data=f"cancel:{content_id}"),
+                InlineKeyboardButton(text="NoReason", callback_data=f"confirm_reject:{content_id}:{site_ctx}:{offset_ctx}:{limit_ctx}:noreason"),
+                InlineKeyboardButton(text="Cancel", callback_data=f"cancel:{content_id}:{site_ctx}:{offset_ctx}:{limit_ctx}"),
             ]]
             await query.edit_message_text(
                 f"🛑 Chọn lý do từ chối cho <code>#{content_id}</code>:",
@@ -391,14 +397,15 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             }
             reason = reason_map.get((extra or "").lower(), extra or "")
             ok, msg = _reject_item(db, content_id, query.from_user.id, reason)
-            await query.edit_message_text(msg, parse_mode=ParseMode.HTML)
+            back = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data=f"page:{site_ctx}:{offset_ctx}")]]) if site_ctx is not None else None
+            await query.edit_message_text(msg, parse_mode=ParseMode.HTML, reply_markup=back)
             return
 
         if action == "publish":
             # Hiển thị xác nhận publish
             buttons = [[
-                InlineKeyboardButton(text="✅ Confirm Publish", callback_data=f"confirm_publish:{content_id}"),
-                InlineKeyboardButton(text="Cancel", callback_data=f"cancel:{content_id}"),
+                InlineKeyboardButton(text="✅ Confirm Publish", callback_data=f"confirm_publish:{content_id}:{site_ctx}:{offset_ctx}:{limit_ctx}"),
+                InlineKeyboardButton(text="Cancel", callback_data=f"cancel:{content_id}:{site_ctx}:{offset_ctx}:{limit_ctx}"),
             ]]
             await query.edit_message_text(
                 f"📢 Xác nhận publish <code>#{content_id}</code>?",
@@ -409,11 +416,13 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
         if action == "confirm_publish":
             ok, msg = _publish_item(db, content_id, query.from_user.id)
-            await query.edit_message_text(msg, parse_mode=ParseMode.HTML)
+            back = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data=f"page:{site_ctx}:{offset_ctx}")]]) if site_ctx is not None else None
+            await query.edit_message_text(msg, parse_mode=ParseMode.HTML, reply_markup=back)
             return
 
         if action == "cancel":
-            await query.edit_message_text("⏹ Đã hủy thao tác.")
+            back = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data=f"page:{site_ctx}:{offset_ctx}")]]) if site_ctx is not None else None
+            await query.edit_message_text("⏹ Đã hủy thao tác.", reply_markup=back)
             return
 
         if action == "page":
