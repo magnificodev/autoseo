@@ -11,6 +11,7 @@ from src.api.routes import auth as auth_router
 from src.api.routes import content as content_router
 from src.api.routes import keywords as keywords_router
 from src.api.routes import admins as admins_router
+from src.api.routes import audit_logs as audit_logs_router
 from src.api.routes import scheduler as scheduler_router
 from src.api.routes import sites as sites_router
 from src.database.session import engine
@@ -40,6 +41,7 @@ def create_app() -> FastAPI:
     app.include_router(content_router.router)
     app.include_router(scheduler_router.router)
     app.include_router(admins_router.router)
+    app.include_router(audit_logs_router.router)
 
     @app.get("/health")
     def health():

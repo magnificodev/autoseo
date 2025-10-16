@@ -4,7 +4,7 @@ export function middleware(req: NextRequest) {
     const token = req.cookies.get('token')?.value;
     const url = req.nextUrl.clone();
     const pathname = url.pathname;
-    const protectedRoutes = ['/sites', '/content', '/admins'];
+    const protectedRoutes = ['/sites', '/content', '/admins', '/audit-logs'];
     if (protectedRoutes.some((p) => pathname.startsWith(p)) && !token) {
         url.pathname = '/login';
         return NextResponse.redirect(url);
@@ -18,5 +18,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-    matcher: ['/sites/:path*', '/content/:path*', '/admins/:path*', '/login'],
+    matcher: ['/sites/:path*', '/content/:path*', '/admins/:path*', '/audit-logs/:path*', '/login'],
 };

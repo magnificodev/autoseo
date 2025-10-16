@@ -15,6 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <Link href="/sites" style={{ marginRight: 12 }}>Sites</Link>
                     <Link href="/content" style={{ marginRight: 12 }}>Content</Link>
                     <Link href="/admins" style={{ marginRight: 12 }}>Admins</Link>
+                    <Link href="/audit-logs" style={{ marginRight: 12 }}>Audit Logs</Link>
                     <Link href="/login" style={{ float: 'right' }}>Login</Link>
                 </nav>
                 {children}
