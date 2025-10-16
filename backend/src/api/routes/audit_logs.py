@@ -1,6 +1,7 @@
 from typing import List
 
-from fastapi import APIRouter, Depends
+from datetime import datetime
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -28,15 +29,28 @@ class AuditLogOut(BaseModel):
 def list_audit_logs(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-    limit: int = 100,
+    limit: int = Query(100, ge=1, le=500),
+    action: str | None = Query(None),
+    start: str | None = Query(None, description="ISO datetime, e.g. 2025-10-16T00:00:00"),
+    end: str | None = Query(None, description="ISO datetime, e.g. 2025-10-16T23:59:59"),
 ):
     # Any authenticated user can view for now; can refine policy later
-    rows = (
-        db.query(AuditLog)
-        .order_by(AuditLog.id.desc())
-        .limit(max(1, min(limit, 500)))
-        .all()
-    )
+    q = db.query(AuditLog)
+    if action:
+        q = q.filter(AuditLog.action == action)
+    if start:
+        try:
+            dt = datetime.fromisoformat(start)
+        except ValueError:
+            raise HTTPException(status_code=422, detail="invalid start datetime format")
+        q = q.filter(AuditLog.created_at >= dt)
+    if end:
+        try:
+            dt = datetime.fromisoformat(end)
+        except ValueError:
+            raise HTTPException(status_code=422, detail="invalid end datetime format")
+        q = q.filter(AuditLog.created_at <= dt)
+    rows = q.order_by(AuditLog.id.desc()).limit(limit).all()
     return rows
 
 
