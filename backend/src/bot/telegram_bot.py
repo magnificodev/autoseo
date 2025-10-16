@@ -811,9 +811,17 @@ async def cmd_whoami(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     uid = user.id
     owner = _OWNER_ID is not None and uid == _OWNER_ID
     admin = _is_admin_user_id(uid)
-    await update.message.reply_text(
-        f"user_id={uid}\nowner={owner}\nadmin={admin}\nOWNER_ID={_OWNER_ID if _OWNER_ID is not None else '(none)'}"
+    owner_badge = "✅" if owner else "❌"
+    admin_badge = "✅" if admin else "❌"
+    owner_id = _OWNER_ID if _OWNER_ID is not None else "(none)"
+    msg = (
+        "👤 <b>Thông tin tài khoản</b>\n"
+        f"• ID: <code>{uid}</code>\n"
+        f"• Owner: <b>{owner_badge}</b>\n"
+        f"• Admin: <b>{admin_badge}</b>\n"
+        f"• OWNER_ID đang nạp: <code>{owner_id}</code>"
     )
+    await update.message.reply_text(msg, parse_mode=ParseMode.HTML)
 
 
 async def cmd_reload_admins(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
