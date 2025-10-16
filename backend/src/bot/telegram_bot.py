@@ -205,21 +205,37 @@ async def _send_queue_page(update: Update, site_id: int, offset: int, limit: int
     start = offset + 1
     end = offset + len(rows)
     header = f"📥 <b>Pending queue</b> (site={site_id}) — <i>{start}–{end}</i>"
+    # Header với phân trang và bulk actions
+    header_rows = [
+        [
+            InlineKeyboardButton(
+                "⬅️ Prev", callback_data=f"page:{site_id}:{max(0, offset - limit)}"
+            ),
+            InlineKeyboardButton(
+                "➡️ Next", callback_data=f"page:{site_id}:{offset + limit}"
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                "✅ Bulk Approve 3", callback_data=f"bulk_approve:{site_id}:{offset}:{limit}:3"
+            ),
+            InlineKeyboardButton(
+                "✅ Bulk Approve 5", callback_data=f"bulk_approve:{site_id}:{offset}:{limit}:5"
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                "🛑 Bulk Reject 3", callback_data=f"bulk_reject_pick:{site_id}:{offset}:{limit}:3"
+            ),
+            InlineKeyboardButton(
+                "🛑 Bulk Reject 5", callback_data=f"bulk_reject_pick:{site_id}:{offset}:{limit}:5"
+            ),
+        ],
+    ]
     await update.message.reply_text(
         header,
         parse_mode=ParseMode.HTML,
-        reply_markup=InlineKeyboardMarkup(
-            [
-                [
-                    InlineKeyboardButton(
-                        "⬅️ Prev", callback_data=f"page:{site_id}:{max(0, offset - limit)}"
-                    ),
-                    InlineKeyboardButton(
-                        "➡️ Next", callback_data=f"page:{site_id}:{offset + limit}"
-                    ),
-                ]
-            ]
-        ),
+        reply_markup=InlineKeyboardMarkup(header_rows),
     )
     # Gửi từng item với nút hành động + xem nội dung
     for r in rows:
@@ -456,9 +472,61 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             # Gửi trang mới vào chat hiện tại
             chat = update.effective_chat
             if chat:
-                dummy_update = update  # reuse update to call helper
                 # Gửi bằng bot: chúng ta gửi message mới, không sửa lại header cũ
                 await _send_queue_page(update, site_id=site_id, offset=new_offset, limit=limit_ctx or 10)
+            return
+
+        if action in {"bulk_approve", "bulk_reject_pick"}:
+            try:
+                site_id = int(parts[1]); offset = int(parts[2]); limit = int(parts[3]); count = int(parts[4])
+            except Exception:
+                await query.edit_message_text("❌ Tham số bulk không hợp lệ.")
+                return
+            if action == "bulk_approve":
+                rows = _fetch_pending(site_id, offset, count)
+                ok_count = 0
+                for r in rows:
+                    ok, _ = _approve_item(db, r.id, query.from_user.id)
+                    if ok:
+                        ok_count += 1
+                await query.edit_message_text(
+                    f"✅ Đã approve {ok_count}/{count} mục.",
+                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data=f"page:{site_id}:{offset}")]]),
+                )
+                return
+            else:
+                # chọn lý do cho bulk reject
+                buttons = [[
+                    InlineKeyboardButton(text="Duplicate", callback_data=f"bulk_reject:{site_id}:{offset}:{limit}:{count}:duplicate"),
+                    InlineKeyboardButton(text="LowQuality", callback_data=f"bulk_reject:{site_id}:{offset}:{limit}:{count}:lowquality"),
+                    InlineKeyboardButton(text="Irrelevant", callback_data=f"bulk_reject:{site_id}:{offset}:{limit}:{count}:irrelevant"),
+                ], [
+                    InlineKeyboardButton(text="NoReason", callback_data=f"bulk_reject:{site_id}:{offset}:{limit}:{count}:noreason"),
+                    InlineKeyboardButton(text="Cancel", callback_data=f"page:{site_id}:{offset}"),
+                ]]
+                await query.edit_message_text(
+                    f"🛑 Chọn lý do từ chối {count} mục đầu trang:", reply_markup=InlineKeyboardMarkup(buttons)
+                )
+                return
+
+        if action == "bulk_reject":
+            try:
+                site_id = int(parts[1]); offset = int(parts[2]); limit = int(parts[3]); count = int(parts[4]); reason_key = parts[5]
+            except Exception:
+                await query.edit_message_text("❌ Tham số bulk reject không hợp lệ.")
+                return
+            reason_map = {"duplicate":"duplicate","lowquality":"low_quality","irrelevant":"irrelevant","noreason":""}
+            reason = reason_map.get(reason_key, reason_key)
+            rows = _fetch_pending(site_id, offset, count)
+            rej = 0
+            for r in rows:
+                ok, _ = _reject_item(db, r.id, query.from_user.id, reason)
+                if ok:
+                    rej += 1
+            await query.edit_message_text(
+                f"🛑 Đã reject {rej}/{count} mục. Lý do: {reason or 'n/a'}",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data=f"page:{site_id}:{offset}")]]),
+            )
             return
 
         await query.edit_message_text("❌ Hành động không hỗ trợ.")
