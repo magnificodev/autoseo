@@ -13,6 +13,24 @@ _ENV_ADMIN_IDS: set[int] = set()
 _OWNER_ID: int | None = None
 
 
+def _load_env_file_if_present(path: str = "/app/.env") -> None:
+    try:
+        if not os.path.exists(path):
+            return
+        with open(path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, value = line.split("=", 1)
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+                if key and key not in os.environ:
+                    os.environ[key] = value
+    except Exception:
+        # Best-effort; ignore
+        pass
+
 def _load_env_admin_ids() -> set[int]:
     raw = os.getenv("TELEGRAM_ADMINS", "").strip()
     ids: set[int] = set()
@@ -254,6 +272,7 @@ async def cmd_reject(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 
 
 def build_app() -> Application:
+    _load_env_file_if_present()  # ensure env from /app/.env available in container
     token = os.getenv("TELEGRAM_TOKEN")
     if not token:
         raise RuntimeError("Missing TELEGRAM_TOKEN env")
