@@ -514,8 +514,6 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             chat = update.effective_chat
             if chat:
                 # Gửi message mới, giữ nguyên thread
-            chat = update.effective_chat
-            if chat:
                 await _send_queue_page(context.bot, chat.id, site_id=site_id, offset=new_offset, limit=new_limit or 10, status=new_status)
             return
 
