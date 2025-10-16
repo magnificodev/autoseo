@@ -10,12 +10,19 @@ export default function AdminsPage() {
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
 
+  async function safeJson(res: Response) {
+    const ct = res.headers.get('content-type') || ''
+    if (ct.includes('application/json')) return res.json()
+    const text = await res.text()
+    throw new Error(text.slice(0, 300))
+  }
+
   async function fetchAdmins() {
     try {
       setError(null)
-      const res = await fetch('/api/admins', { credentials: 'include' })
-      if (!res.ok) throw new Error('Failed to load admins')
-      const data = await res.json()
+      const res = await fetch('/api/admins/', { credentials: 'include' })
+      if (!res.ok) throw new Error(await res.text())
+      const data = await safeJson(res)
       setAdmins(data)
     } catch (e: any) {
       setError(e.message || 'Error')
@@ -28,13 +35,13 @@ export default function AdminsPage() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/admins', {
+      const res = await fetch('/api/admins/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ user_id: Number(userId) })
       })
-      if (!res.ok) throw new Error('Failed to add admin')
+      if (!res.ok) throw new Error(await res.text())
       setUserId('')
       await fetchAdmins()
     } catch (e: any) {
@@ -52,7 +59,7 @@ export default function AdminsPage() {
         method: 'DELETE',
         credentials: 'include'
       })
-      if (!res.ok) throw new Error('Failed to remove admin')
+      if (!res.ok) throw new Error(await res.text())
       await fetchAdmins()
     } catch (e: any) {
       setError(e.message || 'Error')
