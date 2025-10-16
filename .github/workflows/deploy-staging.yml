@@ -42,25 +42,44 @@ jobs:
               run: |
                   ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
-            - name: Upload repository to server
-              uses: appleboy/scp-action@v0.1.7
-              with:
-                  host: ${{ secrets.SSH_HOST }}
-                  username: ${{ secrets.SSH_USER }}
-                  key: ${{ secrets.SSH_KEY }}
-                  port: 22
-                  source: '.'
-                  target: '~/autoseo'
-                  strip_components: 0
+      - name: Pre-check SSH connectivity (retry)
+        run: |
+          set -e
+          for i in $(seq 1 10); do
+            echo "Attempt $i: testing SSH connectivity..."
+            if ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -p 22 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "echo ok"; then
+              echo "SSH connectivity OK"
+              break
+            fi
+            echo "SSH not ready, wait and retry..."
+            sleep 6
+          done
 
-            - name: Remote deploy
-              uses: appleboy/ssh-action@v1.0.3
-              with:
-                  host: ${{ secrets.SSH_HOST }}
-                  username: ${{ secrets.SSH_USER }}
-                  key: ${{ secrets.SSH_KEY }}
-                  port: 22
-                  script: |
+      - name: Upload repository to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          source: '.'
+          target: '~/autoseo'
+          strip_components: 0
+          timeout: 120s
+          command_timeout: 30m
+          debug: true
+
+      - name: Remote deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          timeout: 120s
+          command_timeout: 40m
+          debug: true
+          script: |
                       set -e
                       cd ~/autoseo
 
