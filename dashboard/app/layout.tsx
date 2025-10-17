@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import './globals.css';
 import ClientAuthLinks from './partials/ClientAuthLinks';
 
@@ -11,15 +10,16 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
         <html lang="en">
-            <body>
-                <nav style={{ padding: 12, borderBottom: '1px solid #ddd', marginBottom: 16 }}>
-                    <Link href="/sites" style={{ marginRight: 12 }}>Sites</Link>
-                    <Link href="/content" style={{ marginRight: 12 }}>Content</Link>
-                    <Link href="/admins" style={{ marginRight: 12 }}>Admins</Link>
-                    <Link href="/audit-logs" style={{ marginRight: 12 }}>Audit Logs</Link>
-                    <ClientAuthLinks />
-                </nav>
-                {children}
+            <body className="min-h-screen bg-white text-black">
+                <header className="border-b">
+                    <div className="container flex h-14 items-center justify-between">
+                        <div className="font-semibold">Autoseo Dashboard</div>
+                        <ClientAuthLinks />
+                    </div>
+                </header>
+                <main className="container py-6">
+                    {children}
+                </main>
             </body>
         </html>
     );
