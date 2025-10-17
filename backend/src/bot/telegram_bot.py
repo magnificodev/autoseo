@@ -117,35 +117,22 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Hiển thị 5 lệnh cơ bản - đơn giản hóa"""
     lines = [
-        "📖 <b>Danh sách lệnh</b>",
+        "📖 <b>Lệnh cơ bản</b>",
         "",
-        "🔎 <b>Nội dung & duyệt</b>",
-        "• <b>/queue</b> <code>&lt;site_id&gt; [n|status] [status]</code> – xem hàng đợi (mặc định pending, n=10)",
-        "• <b>/approve</b> <code>&lt;id&gt;</code> – duyệt nội dung",
-        "• <b>/reject</b> <code>&lt;id&gt; [lý_do]</code> – từ chối",
-        "• <b>/publish</b> <code>&lt;id&gt;</code> – publish ngay",
-        "• <b>/find</b> <code>&lt;keyword&gt;</code> – tìm theo tiêu đề/body",
-        "• <b>/createtest</b> <code>[n=20]</code> – tạo n bài test để kiểm tra phân trang",
-        "• <b>/setstatus</b> <code>&lt;id&gt; &lt;status&gt;</code> – cập nhật trạng thái trực tiếp",
+        "• <b>/queue</b> <code>&lt;site_id&gt;</code> – xem và duyệt bài",
+        "• <b>/sites</b> – danh sách sites",
+        "• <b>/status</b> – tổng quan hệ thống",
+        "• <b>/setstatus</b> <code>&lt;id&gt; &lt;status&gt;</code> – cập nhật trạng thái",
+        "• <b>/help</b> – hiển thị lệnh này",
         "",
-        "🛠 <b>Quản trị site</b>",
-        "• <b>/sites</b> – liệt kê site",
-        "• <b>/setquota</b> <code>&lt;site_id&gt; &lt;n&gt;</code> – đặt quota/ngày",
-        "• <b>/sethours</b> <code>&lt;site_id&gt; &lt;start&gt; &lt;end&gt;</code> – giờ hoạt động",
-        "• <b>/toggleauto</b> <code>&lt;site_id&gt; on|off</code> – bật/tắt auto",
+        "💡 <b>Mẹo:</b>",
+        "• Dùng nút trong /queue để duyệt nhanh",
+        "• Các lệnh quản lý phức tạp → Dashboard",
+        "• Status: pending, approved, rejected, published",
         "",
-        "🧭 <b>Hệ thống</b>",
-        "• <b>/status</b> – thống kê trong ngày",
-        "• <b>/health</b> – kiểm tra backend",
-        "",
-        "👤 <b>Tài khoản & quyền</b>",
-        "• <b>/myid</b>, <b>/whoami</b> – xem ID & quyền",
-        "• <b>/admins</b> – xem owner/env/db admins",
-        "• <b>/grant</b> <code>&lt;user_id&gt;</code> / <b>/revoke</b> <code>&lt;user_id&gt;</code> – quản trị (owner)",
-        "• <b>/reload_admins</b> – nạp lại owner/admin từ env",
-        "",
-        "💡 <i>Mẹo:</i> Vào /queue rồi dùng các nút inline để thao tác nhanh và phân trang.",
+        "🌐 <b>Dashboard:</b> <code>http://localhost:3000</code>",
     ]
     await update.message.reply_text("\n".join(lines), parse_mode=ParseMode.HTML)
 
@@ -157,97 +144,42 @@ def _today_range_utc() -> tuple[datetime, datetime]:
     return start, end
 
 
-async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if not await _ensure_admin(update):
-        return
-    start, end = _today_range_utc()
-    db = SessionLocal()
-    try:
-        from sqlalchemy import func
-
-        total_pending = (
-            db.query(func.count(ContentQueue.id))
-            .filter(ContentQueue.status == "pending")
-            .scalar()
-        )
-        today_approved = (
-            db.query(func.count(ContentQueue.id))
-            .filter(ContentQueue.status == "approved")
-            .filter(ContentQueue.updated_at >= start, ContentQueue.updated_at < end)
-            .scalar()
-        )
-        today_published = (
-            db.query(func.count(ContentQueue.id))
-            .filter(ContentQueue.status == "published")
-            .filter(ContentQueue.updated_at >= start, ContentQueue.updated_at < end)
-            .scalar()
-        )
-        msg = (
-            "📊 <b>Trạng thái hôm nay</b>\n"
-            f"• ⏳ Pending: <b>{total_pending}</b>\n"
-            f"• ✅ Approved (today): <b>{today_approved}</b>\n"
-            f"• 📢 Published (today): <b>{today_published}</b>"
-        )
-        await update.message.reply_text(msg, parse_mode=ParseMode.HTML)
-    finally:
-        db.close()
 
 
 async def cmd_queue(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Xem hàng đợi nội dung - đơn giản hóa"""
     if not await _ensure_admin(update):
         return
+    
     args = context.args if context.args else []
-    if len(args) < 1:
+    if not args:
         await update.message.reply_text(
-            "Cách dùng: /queue <site_id> [n|status] [status]\nVí dụ: /queue 1, /queue 1 pending, /queue 1 10, /queue 1 10 approved"
+            "Cách dùng: /queue <site_id>\n"
+            "Ví dụ: /queue 1"
         )
         return
+    
     try:
         site_id = int(args[0])
-
-        # Logic mới: hỗ trợ cả /queue 1 pending và /queue 1 10 pending
-        if len(args) == 2:
-            # Có 2 tham số: /queue 1 <status> hoặc /queue 1 <n>
-            second_arg = args[1].lower().strip()
-            if second_arg in {"pending", "approved", "rejected"}:
-                # /queue 1 pending -> n=10, status=pending
-                limit = 10
-                status = second_arg
-            else:
-                # /queue 1 10 -> n=10, status=pending
-                limit = int(second_arg)
-                limit = max(1, min(limit, 50))
-                status = "pending"
-        elif len(args) == 3:
-            # Có 3 tham số: /queue 1 10 pending
-            limit = int(args[1])
-            limit = max(1, min(limit, 50))
-            status = args[2].lower().strip()
-            if status not in {"pending", "approved", "rejected"}:
-                status = "pending"
-        else:
-            # Chỉ có 1 tham số: /queue 1 -> n=10, status=pending
-            limit = 10
-            status = "pending"
-
+        
+        # Check if site exists
+        db = SessionLocal()
+        try:
+            site = db.get(Site, site_id)
+            if not site:
+                await update.message.reply_text(f"❌ Không tìm thấy site <code>#{site_id}</code>", parse_mode=ParseMode.HTML)
+                return
+            
+            # Show all statuses in one view
+            await _send_queue_overview(bot=context.bot, chat_id=update.effective_chat.id, site_id=site_id)
+            
+        finally:
+            db.close()
+            
     except ValueError:
-        await update.message.reply_text(
-            "Tham số không hợp lệ. Ví dụ: /queue 1, /queue 1 pending, /queue 1 10, /queue 1 10 pending"
-        )
-        return
-
-    # Fallback logic chỉ cho trường hợp mặc định (không chỉ định status)
-    if len(args) == 1:  # Chỉ có /queue 1
-        available_statuses = _get_available_statuses(site_id)
-        if "pending" not in available_statuses and available_statuses:
-            status = available_statuses[0]  # Lấy trạng thái đầu tiên có dữ liệu
-
-    chat = update.effective_chat
-    if not chat:
-        return
-    await _send_queue_page(
-        context.bot, chat.id, site_id=site_id, offset=0, limit=limit, status=status
-    )
+        await update.message.reply_text("❌ Site ID phải là số")
+    except Exception as e:
+        await update.message.reply_text(f"❌ Lỗi: {e}")
 
 
 def _fetch_by_status(
@@ -282,6 +214,88 @@ def _get_available_statuses(site_id: int) -> list[str]:
             if count > 0:
                 statuses.append(status)
         return statuses
+    finally:
+        db.close()
+
+
+def _get_status_counts(site_id: int) -> dict[str, int]:
+    """Lấy số lượng bài theo từng trạng thái"""
+    db = SessionLocal()
+    try:
+        counts = {}
+        for status in ["pending", "approved", "rejected", "published"]:
+            count = (
+                db.query(ContentQueue)
+                .filter(ContentQueue.site_id == site_id, ContentQueue.status == status)
+                .count()
+            )
+            counts[status] = count
+        return counts
+    finally:
+        db.close()
+
+
+async def _send_queue_overview(bot, chat_id: int, site_id: int) -> None:
+    """Hiển thị tổng quan tất cả trạng thái"""
+    db = SessionLocal()
+    try:
+        site = db.get(Site, site_id)
+        if not site:
+            await bot.send_message(chat_id, f"❌ Không tìm thấy site <code>#{site_id}</code>", parse_mode=ParseMode.HTML)
+            return
+        
+        # Get counts for all statuses
+        counts = _get_status_counts(site_id)
+        total = sum(counts.values())
+        
+        if total == 0:
+            await bot.send_message(chat_id, f"ℹ️ <i>Site {site.name} chưa có nội dung nào.</i>", parse_mode=ParseMode.HTML)
+            return
+        
+        # Create overview message
+        status_icons = {
+            "pending": "⏳",
+            "approved": "✅", 
+            "rejected": "🛑",
+            "published": "📢"
+        }
+        
+        header = f"📥 <b>Queue Overview</b> • {site.name} (ID: {site_id})\n"
+        header += f"📊 <b>Tổng cộng:</b> {total} bài\n\n"
+        
+        # Show counts for each status
+        status_lines = []
+        for status, count in counts.items():
+            if count > 0:
+                icon = status_icons.get(status, "❓")
+                status_lines.append(f"{icon} <b>{status.title()}:</b> {count} bài")
+        
+        overview_text = header + "\n".join(status_lines)
+        
+        # Create buttons for each status with content
+        buttons = []
+        for status, count in counts.items():
+            if count > 0:
+                icon = status_icons.get(status, "❓")
+                buttons.append([
+                    InlineKeyboardButton(
+                        f"{icon} {status.title()} ({count})",
+                        callback_data=f"view_status:{site_id}:{status}"
+                    )
+                ])
+        
+        # Add refresh button
+        buttons.append([
+            InlineKeyboardButton("🔄 Refresh", callback_data=f"refresh_overview:{site_id}")
+        ])
+        
+        await bot.send_message(
+            chat_id,
+            overview_text,
+            parse_mode=ParseMode.HTML,
+            reply_markup=InlineKeyboardMarkup(buttons)
+        )
+        
     finally:
         db.close()
 
@@ -1144,6 +1158,41 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             await query.edit_message_text("❌ Đã hủy bulk action.")
             return
 
+        # New simplified handlers
+        if action == "view_status":
+            # callback: view_status:<site_id>:<status>
+            try:
+                site_id = int(parts[1])
+                status = parts[2]
+            except Exception:
+                await query.edit_message_text("❌ Tham số không hợp lệ.")
+                return
+            await query.edit_message_text("🔄 Đang tải...")
+            await _send_queue_page(bot=context.bot, chat_id=query.message.chat_id, site_id=site_id, offset=0, limit=10, status=status)
+            return
+
+        if action == "refresh_overview":
+            # callback: refresh_overview:<site_id>
+            try:
+                site_id = int(parts[1])
+            except Exception:
+                await query.edit_message_text("❌ Tham số không hợp lệ.")
+                return
+            await query.edit_message_text("🔄 Đang tải...")
+            await _send_queue_overview(bot=context.bot, chat_id=query.message.chat_id, site_id=site_id)
+            return
+
+        if action == "quick_queue":
+            # callback: quick_queue:<site_id>
+            try:
+                site_id = int(parts[1])
+            except Exception:
+                await query.edit_message_text("❌ Tham số không hợp lệ.")
+                return
+            await query.edit_message_text("🔄 Đang tải...")
+            await _send_queue_overview(bot=context.bot, chat_id=query.message.chat_id, site_id=site_id)
+            return
+
         await query.edit_message_text("❌ Hành động không hỗ trợ.")
     finally:
         db.close()
@@ -1280,11 +1329,101 @@ async def cmd_find(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         db.close()
 
 
+async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Xem tổng quan tất cả sites"""
+    if not await _ensure_admin(update):
+        return
+    
+    db = SessionLocal()
+    try:
+        sites = db.query(Site).all()
+        if not sites:
+            await update.message.reply_text("ℹ️ <i>Chưa có site nào.</i>", parse_mode=ParseMode.HTML)
+            return
+        
+        status_icons = {
+            "pending": "⏳",
+            "approved": "✅", 
+            "rejected": "🛑",
+            "published": "📢"
+        }
+        
+        header = "📊 <b>System Status</b>\n\n"
+        
+        total_counts = {"pending": 0, "approved": 0, "rejected": 0, "published": 0}
+        site_lines = []
+        
+        for site in sites:
+            counts = _get_status_counts(site.id)
+            site_total = sum(counts.values())
+            
+            # Update totals
+            for status, count in counts.items():
+                total_counts[status] += count
+            
+            if site_total > 0:
+                status_summary = []
+                for status, count in counts.items():
+                    if count > 0:
+                        icon = status_icons.get(status, "❓")
+                        status_summary.append(f"{icon}{count}")
+                
+                site_lines.append(
+                    f"<b>#{site.id}</b> {site.name} • {site_total} bài\n"
+                    f"   {' '.join(status_summary)}"
+                )
+        
+        # Create message
+        message_lines = [header]
+        
+        # Overall totals
+        total_all = sum(total_counts.values())
+        if total_all > 0:
+            total_summary = []
+            for status, count in total_counts.items():
+                if count > 0:
+                    icon = status_icons.get(status, "❓")
+                    total_summary.append(f"{icon} {count}")
+            
+            message_lines.append(f"<b>📈 Tổng cộng:</b> {total_all} bài")
+            message_lines.append(f"   {' '.join(total_summary)}")
+            message_lines.append("")
+        
+        # Per site details
+        if site_lines:
+            message_lines.append("<b>📋 Chi tiết theo site:</b>")
+            message_lines.extend(site_lines)
+        
+        full_message = "\n".join(message_lines)
+        
+        # Split if too long
+        if len(full_message) > 4000:
+            # Send header first
+            await update.message.reply_text(header + f"<b>📈 Tổng cộng:</b> {total_all} bài", parse_mode=ParseMode.HTML)
+            
+            # Send sites in chunks
+            chunk = []
+            for line in site_lines:
+                if len("\n".join(chunk + [line])) > 3500:
+                    await update.message.reply_text("\n".join(chunk), parse_mode=ParseMode.HTML)
+                    chunk = [line]
+                else:
+                    chunk.append(line)
+            
+            if chunk:
+                await update.message.reply_text("\n".join(chunk), parse_mode=ParseMode.HTML)
+        else:
+            await update.message.reply_text(full_message, parse_mode=ParseMode.HTML)
+            
+    finally:
+        db.close()
+
+
 async def cmd_setstatus(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Cập nhật trạng thái bài viết trực tiếp"""
     if not await _ensure_admin(update):
         return
-    
+
     args = context.args if context.args else []
     if len(args) < 2:
         await update.message.reply_text(
@@ -1293,26 +1432,31 @@ async def cmd_setstatus(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             "Ví dụ: /setstatus 123 published"
         )
         return
-    
+
     try:
         content_id = int(args[0])
         new_status = args[1].lower().strip()
-        
+
         if new_status not in ["pending", "approved", "rejected", "published"]:
-            await update.message.reply_text("❌ Trạng thái không hợp lệ. Dùng: pending, approved, rejected, published")
+            await update.message.reply_text(
+                "❌ Trạng thái không hợp lệ. Dùng: pending, approved, rejected, published"
+            )
             return
-        
+
         db = SessionLocal()
         try:
             item = db.get(ContentQueue, content_id)
             if not item:
-                await update.message.reply_text(f"❌ Không tìm thấy bài <code>#{content_id}</code>", parse_mode=ParseMode.HTML)
+                await update.message.reply_text(
+                    f"❌ Không tìm thấy bài <code>#{content_id}</code>",
+                    parse_mode=ParseMode.HTML,
+                )
                 return
-            
+
             old_status = item.status
             item.status = new_status
             item.updated_at = datetime.utcnow()
-            
+
             # Ghi audit log
             audit_log = AuditLog(
                 actor_user_id=update.effective_user.id,
@@ -1320,31 +1464,31 @@ async def cmd_setstatus(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
                 target_type="content_queue",
                 target_id=content_id,
                 note=f"Changed from {old_status} to {new_status}",
-                created_at=datetime.utcnow()
+                created_at=datetime.utcnow(),
             )
             db.add(audit_log)
             db.commit()
-            
+
             status_icons = {
                 "pending": "⏳",
-                "approved": "✅", 
+                "approved": "✅",
                 "rejected": "🛑",
-                "published": "📢"
+                "published": "📢",
             }
-            
+
             await update.message.reply_text(
                 f"✅ <b>Đã cập nhật trạng thái</b>\n\n"
                 f"<b>#{content_id}</b> • {item.title[:50]}...\n"
                 f"{status_icons.get(old_status, '❓')} {old_status} → {status_icons.get(new_status, '❓')} {new_status}",
-                parse_mode=ParseMode.HTML
+                parse_mode=ParseMode.HTML,
             )
-            
+
         except Exception as e:
             await update.message.reply_text(f"❌ Lỗi: {e}")
             db.rollback()
         finally:
             db.close()
-            
+
     except ValueError:
         await update.message.reply_text("❌ ID bài viết phải là số")
 
@@ -1452,20 +1596,13 @@ def _set_default_commands_menu() -> None:
 
 
 def _set_admin_commands_for_user(user_id: int) -> None:
-    # Scope per-user: chat_member in 1:1 chat
+    # Scope per-user: chat_member in 1:1 chat - simplified to 5 basic commands
     commands = [
         {"command": "help", "description": "Danh sách lệnh"},
-        {"command": "status", "description": "Thống kê hôm nay"},
-        {"command": "sites", "description": "Liệt kê site"},
-        {"command": "queue", "description": "Xem queue"},
-        {"command": "approve", "description": "Duyệt"},
-        {"command": "reject", "description": "Từ chối"},
-        {"command": "publish", "description": "Publish"},
-        {"command": "setquota", "description": "Đặt quota"},
-        {"command": "sethours", "description": "Khung giờ"},
-        {"command": "toggleauto", "description": "Bật/tắt auto"},
-        {"command": "find", "description": "Tìm nội dung"},
-        {"command": "health", "description": "Kiểm tra hệ thống"},
+        {"command": "queue", "description": "Xem và duyệt bài"},
+        {"command": "sites", "description": "Danh sách sites"},
+        {"command": "status", "description": "Tổng quan hệ thống"},
+        {"command": "setstatus", "description": "Cập nhật trạng thái"},
     ]
     scope = {"type": "chat_member", "chat_id": user_id, "user_id": user_id}
     _bot_api("setMyCommands", {"scope": scope, "commands": commands})
@@ -1489,16 +1626,49 @@ def _refresh_commands_menu_for_all_admins() -> None:
 
 
 async def cmd_sites(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Xem danh sách sites với thông tin cơ bản"""
     db = SessionLocal()
     try:
-        rows = db.query(Site).all()
-        if not rows:
-            await update.message.reply_text(
-                "ℹ️ <i>Chưa có site nào.</i>", parse_mode=ParseMode.HTML
-            )
+        sites = db.query(Site).all()
+        if not sites:
+            await update.message.reply_text("ℹ️ <i>Chưa có site nào.</i>", parse_mode=ParseMode.HTML)
             return
-        lines = [f"<b>#{s.id}</b> • {s.name}\n↳ <code>{s.wp_url}</code>" for s in rows]
-        await update.message.reply_text("\n".join(lines), parse_mode=ParseMode.HTML)
+        
+        header = "🌐 <b>Danh sách Sites</b>\n\n"
+        
+        site_lines = []
+        for site in sites:
+            # Get content counts
+            counts = _get_status_counts(site.id)
+            total = sum(counts.values())
+            
+            # Status indicators
+            auto_status = "🟢" if site.is_auto_enabled else "🔴"
+            quota_info = f" (quota: {site.daily_quota or '∞'})" if site.daily_quota else ""
+            
+            site_info = f"<b>#{site.id}</b> {site.name} {auto_status}\n"
+            site_info += f"↳ <code>{site.wp_url}</code>\n"
+            site_info += f"↳ 📊 {total} bài{quota_info}"
+            
+            site_lines.append(site_info)
+        
+        full_message = header + "\n\n".join(site_lines)
+        
+        # Add quick action buttons
+        buttons = []
+        for site in sites:
+            buttons.append([
+                InlineKeyboardButton(
+                    f"📥 Queue #{site.id}",
+                    callback_data=f"quick_queue:{site.id}"
+                )
+            ])
+        
+        await update.message.reply_text(
+            full_message, 
+            parse_mode=ParseMode.HTML,
+            reply_markup=InlineKeyboardMarkup(buttons) if buttons else None
+        )
     finally:
         db.close()
 
@@ -1794,27 +1964,13 @@ def build_app() -> Application:
     app = Application.builder().token(token).build()
     # Set commands menu asynchronously after startup
     _refresh_commands_menu_for_all_admins()
+    # Only 5 basic commands - simplified bot
     app.add_handler(CommandHandler("start", cmd_start))
-    app.add_handler(CommandHandler("sites", cmd_sites))
     app.add_handler(CommandHandler("help", cmd_help))
-    app.add_handler(CommandHandler("profile", cmd_profile))
-    # Remove dedicated commands to keep UI gọn: dùng /profile thay thế
-    app.add_handler(CommandHandler("reload_admins", cmd_reload_admins))
-    app.add_handler(CommandHandler("status", cmd_status))
-    app.add_handler(CommandHandler("admins", cmd_admins))
-    app.add_handler(CommandHandler("grant", cmd_grant))
-    app.add_handler(CommandHandler("revoke", cmd_revoke_admin))
     app.add_handler(CommandHandler("queue", cmd_queue))
-    app.add_handler(CommandHandler("publish", cmd_publish))
-    app.add_handler(CommandHandler("setquota", cmd_setquota))
-    app.add_handler(CommandHandler("sethours", cmd_sethours))
-    app.add_handler(CommandHandler("toggleauto", cmd_toggleauto))
-    app.add_handler(CommandHandler("find", cmd_find))
-    app.add_handler(CommandHandler("health", cmd_health))
-    app.add_handler(CommandHandler("approve", cmd_approve))
-    app.add_handler(CommandHandler("reject", cmd_reject))
+    app.add_handler(CommandHandler("sites", cmd_sites))
+    app.add_handler(CommandHandler("status", cmd_status))
     app.add_handler(CommandHandler("setstatus", cmd_setstatus))
-    app.add_handler(CommandHandler("createtest", cmd_createtest))
     app.add_handler(CallbackQueryHandler(on_action_button))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_bulk_input))
     return app
