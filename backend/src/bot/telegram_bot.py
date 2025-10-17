@@ -127,6 +127,7 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "• <b>/publish</b> <code>&lt;id&gt;</code> – publish ngay",
         "• <b>/find</b> <code>&lt;keyword&gt;</code> – tìm theo tiêu đề/body",
         "• <b>/createtest</b> <code>[n=20]</code> – tạo n bài test để kiểm tra phân trang",
+        "• <b>/setstatus</b> <code>&lt;id&gt; &lt;status&gt;</code> – cập nhật trạng thái trực tiếp",
         "",
         "🛠 <b>Quản trị site</b>",
         "• <b>/sites</b> – liệt kê site",
@@ -359,7 +360,7 @@ async def _send_queue_page(
         action_buttons = []
         for i, r in enumerate(rows, 1):
             row_buttons = []
-            
+
             # Nút View
             row_buttons.append(
                 InlineKeyboardButton(
@@ -367,19 +368,21 @@ async def _send_queue_page(
                     callback_data=f"view:{r.id}:{site_id}:{offset}:{limit}:{status}",
                 )
             )
-            
+
             # Nút hành động theo trạng thái
             if status == "pending":
-                row_buttons.extend([
-                    InlineKeyboardButton(
-                        text=f"✅ {i}",
-                        callback_data=f"approve:{r.id}:{site_id}:{offset}:{limit}:{status}",
-                    ),
-                    InlineKeyboardButton(
-                        text=f"🛑 {i}",
-                        callback_data=f"reject:{r.id}:{site_id}:{offset}:{limit}:{status}",
-                    ),
-                ])
+                row_buttons.extend(
+                    [
+                        InlineKeyboardButton(
+                            text=f"✅ {i}",
+                            callback_data=f"approve:{r.id}:{site_id}:{offset}:{limit}:{status}",
+                        ),
+                        InlineKeyboardButton(
+                            text=f"🛑 {i}",
+                            callback_data=f"reject:{r.id}:{site_id}:{offset}:{limit}:{status}",
+                        ),
+                    ]
+                )
             elif status == "approved":
                 row_buttons.append(
                     InlineKeyboardButton(
@@ -388,7 +391,7 @@ async def _send_queue_page(
                     )
                 )
             # rejected không có nút hành động, chỉ xem
-            
+
             action_buttons.append(row_buttons)
 
         # Gộp tất cả vào 1 message
@@ -1277,6 +1280,75 @@ async def cmd_find(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         db.close()
 
 
+async def cmd_setstatus(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Cập nhật trạng thái bài viết trực tiếp"""
+    if not await _ensure_admin(update):
+        return
+    
+    args = context.args if context.args else []
+    if len(args) < 2:
+        await update.message.reply_text(
+            "Cách dùng: /setstatus <content_id> <status>\n"
+            "Status: pending, approved, rejected, published\n"
+            "Ví dụ: /setstatus 123 published"
+        )
+        return
+    
+    try:
+        content_id = int(args[0])
+        new_status = args[1].lower().strip()
+        
+        if new_status not in ["pending", "approved", "rejected", "published"]:
+            await update.message.reply_text("❌ Trạng thái không hợp lệ. Dùng: pending, approved, rejected, published")
+            return
+        
+        db = SessionLocal()
+        try:
+            item = db.get(ContentQueue, content_id)
+            if not item:
+                await update.message.reply_text(f"❌ Không tìm thấy bài <code>#{content_id}</code>", parse_mode=ParseMode.HTML)
+                return
+            
+            old_status = item.status
+            item.status = new_status
+            item.updated_at = datetime.utcnow()
+            
+            # Ghi audit log
+            audit_log = AuditLog(
+                actor_user_id=update.effective_user.id,
+                action="setstatus",
+                target_type="content_queue",
+                target_id=content_id,
+                note=f"Changed from {old_status} to {new_status}",
+                created_at=datetime.utcnow()
+            )
+            db.add(audit_log)
+            db.commit()
+            
+            status_icons = {
+                "pending": "⏳",
+                "approved": "✅", 
+                "rejected": "🛑",
+                "published": "📢"
+            }
+            
+            await update.message.reply_text(
+                f"✅ <b>Đã cập nhật trạng thái</b>\n\n"
+                f"<b>#{content_id}</b> • {item.title[:50]}...\n"
+                f"{status_icons.get(old_status, '❓')} {old_status} → {status_icons.get(new_status, '❓')} {new_status}",
+                parse_mode=ParseMode.HTML
+            )
+            
+        except Exception as e:
+            await update.message.reply_text(f"❌ Lỗi: {e}")
+            db.rollback()
+        finally:
+            db.close()
+            
+    except ValueError:
+        await update.message.reply_text("❌ ID bài viết phải là số")
+
+
 async def cmd_createtest(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Tạo bài test để kiểm tra phân trang"""
     if not await _ensure_admin(update):
@@ -1741,6 +1813,7 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("health", cmd_health))
     app.add_handler(CommandHandler("approve", cmd_approve))
     app.add_handler(CommandHandler("reject", cmd_reject))
+    app.add_handler(CommandHandler("setstatus", cmd_setstatus))
     app.add_handler(CommandHandler("createtest", cmd_createtest))
     app.add_handler(CallbackQueryHandler(on_action_button))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_bulk_input))
