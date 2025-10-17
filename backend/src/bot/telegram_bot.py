@@ -39,14 +39,13 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def cmd_clear(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Xóa tin nhắn trong chat"""
     chat_id = update.effective_chat.id
-    
+
     # Gửi tin nhắn xác nhận
     await update.message.reply_text(
-        "🧹 <b>Đang xóa tin nhắn...</b>\n\n"
-        "💡 <i>Chat đã được làm sạch</i>",
+        "🧹 <b>Đang xóa tin nhắn...</b>\n\n💡 <i>Chat đã được làm sạch</i>",
         parse_mode="HTML",
     )
-    
+
     # Xóa tin nhắn vừa gửi sau 2 giây
     try:
         await context.bot.delete_message(chat_id, update.message.message_id)
@@ -78,23 +77,29 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
 
 def build_app() -> Application:
-    """Tạo ứng dụng bot đơn giản"""
+    """Tạo ứng dụng bot đơn giản - không có menu lệnh"""
     token = os.getenv("TELEGRAM_TOKEN")
     if not token:
         raise RuntimeError("Missing TELEGRAM_TOKEN env")
-
+    
     app = Application.builder().token(token).build()
-
-    # Chỉ có 2 lệnh cơ bản
+    
+    # Chỉ có 2 lệnh cơ bản - không hiển thị menu
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("clear", cmd_clear))
-    
+
     # Xử lý tất cả lệnh khác
     app.add_handler(MessageHandler(filters.COMMAND, cmd_unknown))
-
+    
     # Xử lý tin nhắn thường
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
+    
+    # Xóa menu lệnh để bot "ẩn" hoàn toàn
+    try:
+        app.bot.delete_my_commands()
+    except Exception:
+        pass  # Ignore if commands can't be deleted
+    
     return app
 
 
