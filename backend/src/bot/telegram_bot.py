@@ -110,7 +110,7 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "📖 <b>Danh sách lệnh</b>",
         "",
         "🔎 <b>Nội dung & duyệt</b>",
-        "• <b>/queue</b> <code>&lt;site_id&gt; [n]</code> – xem hàng đợi (có nút View/Approve/Reject/Publish, phân trang)",
+        "• <b>/queue</b> <code>&lt;site_id&gt; [n] [status]</code> – xem hàng đợi (pending/approved/rejected, có nút View/Approve/Reject/Publish, phân trang)",
         "• <b>/approve</b> <code>&lt;id&gt;</code> – duyệt nội dung",
         "• <b>/reject</b> <code>&lt;id&gt; [lý_do]</code> – từ chối",
         "• <b>/publish</b> <code>&lt;id&gt;</code> – publish ngay",
@@ -185,18 +185,25 @@ async def cmd_queue(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
     args = context.args if context.args else []
     if len(args) < 1:
-        await update.message.reply_text("Cách dùng: /queue <site_id> [n=10]")
+        await update.message.reply_text("Cách dùng: /queue <site_id> [n=10] [status]")
         return
     try:
         site_id = int(args[0])
         limit = int(args[1]) if len(args) > 1 else 10
         limit = max(1, min(limit, 50))
         status = (args[2].lower() if len(args) > 2 else "pending").strip()
-        if status not in {"pending", "approved"}:
+        if status not in {"pending", "approved", "rejected"}:
             status = "pending"
     except ValueError:
         await update.message.reply_text("Tham số không hợp lệ. Ví dụ: /queue 1 10")
         return
+    
+    # Fallback logic: nếu không có bài pending, thử approved
+    if status == "pending":
+        available_statuses = _get_available_statuses(site_id)
+        if "pending" not in available_statuses and available_statuses:
+            status = available_statuses[0]  # Lấy trạng thái đầu tiên có dữ liệu
+    
     chat = update.effective_chat
     if not chat:
         return
@@ -219,15 +226,39 @@ def _fetch_by_status(site_id: int, status: str, offset: int, limit: int) -> list
         db.close()
 
 
+def _get_available_statuses(site_id: int) -> list[str]:
+    """Tìm trạng thái có dữ liệu cho site"""
+    db = SessionLocal()
+    try:
+        statuses = []
+        for status in ["pending", "approved", "rejected"]:
+            count = db.query(ContentQueue).filter(
+                ContentQueue.site_id == site_id,
+                ContentQueue.status == status
+            ).count()
+            if count > 0:
+                statuses.append(status)
+        return statuses
+    finally:
+        db.close()
+
+
 async def _send_queue_page(bot, chat_id: int, site_id: int, offset: int, limit: int, status: str = "pending") -> None:
     rows = _fetch_by_status(site_id, status, offset, limit)
     if not rows:
-        await bot.send_message(chat_id, "ℹ️ <i>Không có mục phù hợp.</i>", parse_mode=ParseMode.HTML)
+        available_statuses = _get_available_statuses(site_id)
+        if available_statuses:
+            msg = f"ℹ️ <i>Không có bài {status}.</i>\n"
+            msg += f"Có thể xem: {', '.join(available_statuses)}"
+        else:
+            msg = "ℹ️ <i>Site này chưa có nội dung nào.</i>"
+        await bot.send_message(chat_id, msg, parse_mode=ParseMode.HTML)
         return
     # Gửi danh sách + nút phân trang
     start = offset + 1
     end = offset + len(rows)
-    title = "Pending" if status == "pending" else "Approved"
+    title_map = {"pending": "Pending", "approved": "Approved", "rejected": "Rejected"}
+    title = title_map.get(status, status.title())
     header = f"📥 <b>{title} queue</b> (site={site_id}) — <i>{start}–{end}</i>"
     # Header với phân trang và bulk actions
     header_rows = [
@@ -239,39 +270,52 @@ async def _send_queue_page(bot, chat_id: int, site_id: int, offset: int, limit: 
                 "➡️ Next", callback_data=f"page:{site_id}:{offset + limit}:{limit}:{status}"
             ),
         ],
-        [
-            InlineKeyboardButton(
-                "✅ Bulk Approve 3", callback_data=f"bulk_approve:{site_id}:{offset}:{limit}:3"
-            ),
-            InlineKeyboardButton(
-                "✅ Bulk Approve 5", callback_data=f"bulk_approve:{site_id}:{offset}:{limit}:5"
-            ),
-        ],
-        [
-            InlineKeyboardButton(
-                "🛑 Bulk Reject 3", callback_data=f"bulk_reject_pick:{site_id}:{offset}:{limit}:3"
-            ),
-            InlineKeyboardButton(
-                "🛑 Bulk Reject 5", callback_data=f"bulk_reject_pick:{site_id}:{offset}:{limit}:5"
-            ),
-        ],
-        [
+    ]
+    
+    # Bulk actions theo trạng thái
+    if status == "pending":
+        header_rows.extend([
+            [
+                InlineKeyboardButton(
+                    "✅ Bulk Approve 3", callback_data=f"bulk_approve:{site_id}:{offset}:{limit}:3"
+                ),
+                InlineKeyboardButton(
+                    "✅ Bulk Approve 5", callback_data=f"bulk_approve:{site_id}:{offset}:{limit}:5"
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    "🛑 Bulk Reject 3", callback_data=f"bulk_reject_pick:{site_id}:{offset}:{limit}:3"
+                ),
+                InlineKeyboardButton(
+                    "🛑 Bulk Reject 5", callback_data=f"bulk_reject_pick:{site_id}:{offset}:{limit}:5"
+                ),
+            ],
+        ])
+    elif status == "approved":
+        header_rows.append([
             InlineKeyboardButton(
                 "📢 Bulk Publish 3", callback_data=f"bulk_publish:{site_id}:{offset}:{limit}:3"
             ),
             InlineKeyboardButton(
                 "📢 Bulk Publish 5", callback_data=f"bulk_publish:{site_id}:{offset}:{limit}:5"
             ),
-        ],
-        [
-            InlineKeyboardButton(
-                "Filter: Pending", callback_data=f"filter:{site_id}:{offset}:{limit}:pending"
-            ),
-            InlineKeyboardButton(
-                "Filter: Approved", callback_data=f"filter:{site_id}:{offset}:{limit}:approved"
-            ),
-        ],
-    ]
+        ])
+    
+    # Filter buttons
+    available_statuses = _get_available_statuses(site_id)
+    filter_buttons = []
+    for st in ["pending", "approved", "rejected"]:
+        if st in available_statuses:
+            label = "Pending" if st == "pending" else "Approved" if st == "approved" else "Rejected"
+            filter_buttons.append(
+                InlineKeyboardButton(
+                    f"Filter: {label}", callback_data=f"filter:{site_id}:{offset}:{limit}:{st}"
+                )
+            )
+    
+    if filter_buttons:
+        header_rows.append(filter_buttons)
     await bot.send_message(
         chat_id,
         header,
@@ -282,22 +326,30 @@ async def _send_queue_page(bot, chat_id: int, site_id: int, offset: int, limit: 
     for r in rows:
         text = f"<b>#{r.id}</b> • {r.title[:80]}"
         buttons = [
-            [
-                InlineKeyboardButton(
-                    text="👁 View", callback_data=f"view:{r.id}:{site_id}:{offset}:{limit}:{status}"
-                ),
+            InlineKeyboardButton(
+                text="👁 View", callback_data=f"view:{r.id}:{site_id}:{offset}:{limit}:{status}"
+            ),
+        ]
+        
+        # Nút hành động theo trạng thái
+        if status == "pending":
+            buttons.extend([
                 InlineKeyboardButton(
                     text="✅ Approve", callback_data=f"approve:{r.id}:{site_id}:{offset}:{limit}:{status}"
                 ),
                 InlineKeyboardButton(
                     text="🛑 Reject", callback_data=f"reject:{r.id}:{site_id}:{offset}:{limit}:{status}"
                 ),
+            ])
+        elif status == "approved":
+            buttons.append(
                 InlineKeyboardButton(
                     text="📢 Publish", callback_data=f"publish:{r.id}:{site_id}:{offset}:{limit}:{status}"
-                ),
-            ]
-        ]
-        await bot.send_message(chat_id, text, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(buttons))
+                )
+            )
+        # rejected không có nút hành động, chỉ xem
+        
+        await bot.send_message(chat_id, text, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup([buttons]))
 
 
 async def cmd_publish(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
