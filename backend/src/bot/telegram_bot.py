@@ -345,50 +345,66 @@ async def _send_queue_page(
         )
 
     # Không có filter buttons nữa - sử dụng lệnh text
-    await bot.send_message(
-        chat_id,
-        header,
-        parse_mode=ParseMode.HTML,
-        reply_markup=InlineKeyboardMarkup(header_rows),
-    )
-    # Gửi từng item với nút hành động + xem nội dung
-    for r in rows:
-        text = f"<b>#{r.id}</b> • {r.title[:80]}"
-        buttons = [
-            InlineKeyboardButton(
-                text="👁 View",
-                callback_data=f"view:{r.id}:{site_id}:{offset}:{limit}:{status}",
-            ),
-        ]
-
-        # Nút hành động theo trạng thái
-        if status == "pending":
-            buttons.extend(
-                [
+    
+    # Gửi danh sách compact trong 1 message
+    if rows:
+        # Tạo danh sách compact
+        items_text = []
+        for i, r in enumerate(rows, 1):
+            # Format: 1. #123 • Title (truncated) • Status
+            title_short = r.title[:50] + "..." if len(r.title) > 50 else r.title
+            status_icon = "⏳" if status == "pending" else "✅" if status == "approved" else "🛑" if status == "rejected" else "📢"
+            items_text.append(f"{i:2d}. {status_icon} <b>#{r.id}</b> • {title_short}")
+        
+        # Tạo nút hành động cho từng item (gộp nhiều item trên 1 hàng)
+        action_buttons = []
+        items_per_row = 3  # 3 item trên 1 hàng nút
+        
+        for i in range(0, len(rows), items_per_row):
+            row_buttons = []
+            for j in range(i, min(i + items_per_row, len(rows))):
+                r = rows[j]
+                item_num = j + 1
+                
+                # Nút View
+                row_buttons.append(
                     InlineKeyboardButton(
-                        text="✅ Approve",
-                        callback_data=f"approve:{r.id}:{site_id}:{offset}:{limit}:{status}",
-                    ),
-                    InlineKeyboardButton(
-                        text="🛑 Reject",
-                        callback_data=f"reject:{r.id}:{site_id}:{offset}:{limit}:{status}",
-                    ),
-                ]
-            )
-        elif status == "approved":
-            buttons.append(
-                InlineKeyboardButton(
-                    text="📢 Publish",
-                    callback_data=f"publish:{r.id}:{site_id}:{offset}:{limit}:{status}",
+                        text=f"👁{item_num}",
+                        callback_data=f"view:{r.id}:{site_id}:{offset}:{limit}:{status}",
+                    )
                 )
-            )
-        # rejected không có nút hành động, chỉ xem
-
+                
+                # Nút hành động theo trạng thái
+                if status == "pending":
+                    row_buttons.extend([
+                        InlineKeyboardButton(
+                            text=f"✅{item_num}",
+                            callback_data=f"approve:{r.id}:{site_id}:{offset}:{limit}:{status}",
+                        ),
+                        InlineKeyboardButton(
+                            text=f"🛑{item_num}",
+                            callback_data=f"reject:{r.id}:{site_id}:{offset}:{limit}:{status}",
+                        ),
+                    ])
+                elif status == "approved":
+                    row_buttons.append(
+                        InlineKeyboardButton(
+                            text=f"📢{item_num}",
+                            callback_data=f"publish:{r.id}:{site_id}:{offset}:{limit}:{status}",
+                        )
+                    )
+                # rejected không có nút hành động, chỉ xem
+            
+            action_buttons.append(row_buttons)
+        
+        # Gộp tất cả vào 1 message
+        full_text = f"{header}\n\n" + "\n".join(items_text)
+        
         await bot.send_message(
             chat_id,
-            text,
+            full_text,
             parse_mode=ParseMode.HTML,
-            reply_markup=InlineKeyboardMarkup([buttons]),
+            reply_markup=InlineKeyboardMarkup(header_rows + action_buttons),
         )
 
 
@@ -1271,19 +1287,21 @@ async def cmd_createtest(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     """Tạo bài test để kiểm tra phân trang"""
     if not await _ensure_admin(update):
         return
-    
+
     args = context.args if context.args else []
     count = int(args[0]) if len(args) > 0 and args[0].isdigit() else 20
     count = max(1, min(count, 100))  # Giới hạn 1-100
-    
+
     db = SessionLocal()
     try:
         # Lấy site đầu tiên
         site = db.query(Site).first()
         if not site:
-            await update.message.reply_text("❌ Không có site nào. Vui lòng tạo site trước.")
+            await update.message.reply_text(
+                "❌ Không có site nào. Vui lòng tạo site trước."
+            )
             return
-        
+
         # Tạo bài test
         created = 0
         for i in range(1, count + 1):
@@ -1292,28 +1310,29 @@ async def cmd_createtest(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 title=f"Test Article #{i:03d} - {datetime.now().strftime('%H:%M:%S')}",
                 body=f"Đây là nội dung test số {i}. Bài viết này được tạo tự động để test tính năng phân trang của Telegram bot. Nội dung bao gồm các thông tin cần thiết để kiểm tra các chức năng approve, reject và publish. Bài viết có độ dài vừa phải để hiển thị tốt trong giao diện bot.",
                 status="pending",
-                created_at=datetime.utcnow()
+                created_at=datetime.utcnow(),
             )
             db.add(content)
             created += 1
-        
+
         db.commit()
-        
+
         # Thống kê
-        total_pending = db.query(ContentQueue).filter(
-            ContentQueue.site_id == site.id, 
-            ContentQueue.status == "pending"
-        ).count()
-        
+        total_pending = (
+            db.query(ContentQueue)
+            .filter(ContentQueue.site_id == site.id, ContentQueue.status == "pending")
+            .count()
+        )
+
         await update.message.reply_text(
             f"✅ <b>Đã tạo {created} bài test</b>\n\n"
             f"📊 <b>Thống kê site #{site.id}:</b>\n"
             f"• Pending: {total_pending} bài\n"
             f"• Có thể test: <code>/queue {site.id} pending</code>\n"
             f"• Phân trang: <code>/queue {site.id} 10 pending</code>",
-            parse_mode=ParseMode.HTML
+            parse_mode=ParseMode.HTML,
         )
-        
+
     except Exception as e:
         await update.message.reply_text(f"❌ Lỗi: {e}")
         db.rollback()
