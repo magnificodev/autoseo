@@ -19,7 +19,14 @@ except Exception:  # pragma: no cover
         PARSE_MODE_HTML = "HTML"
 from src.database.models import AuditLog, ContentQueue, Site, TelegramAdmin
 from src.database.session import SessionLocal
-from telegram.ext import Application, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram.ext import (
+    Application,
+    CallbackQueryHandler,
+    CommandHandler,
+    ContextTypes,
+    MessageHandler,
+    filters,
+)
 
 _ENV_ADMIN_IDS: set[int] = set()
 _OWNER_ID: int | None = None
@@ -119,6 +126,7 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "• <b>/reject</b> <code>&lt;id&gt; [lý_do]</code> – từ chối",
         "• <b>/publish</b> <code>&lt;id&gt;</code> – publish ngay",
         "• <b>/find</b> <code>&lt;keyword&gt;</code> – tìm theo tiêu đề/body",
+        "• <b>/createtest</b> <code>[n=20]</code> – tạo n bài test để kiểm tra phân trang",
         "",
         "🛠 <b>Quản trị site</b>",
         "• <b>/sites</b> – liệt kê site",
@@ -765,9 +773,16 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             await query.edit_message_text(
                 "✅ <b>Bulk Approve</b>\n\nNhập số lượng bài muốn approve (1-20):",
                 parse_mode=ParseMode.HTML,
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("Cancel", callback_data=f"page:{site_id}:{offset}:{limit}:pending")]
-                ])
+                reply_markup=InlineKeyboardMarkup(
+                    [
+                        [
+                            InlineKeyboardButton(
+                                "Cancel",
+                                callback_data=f"page:{site_id}:{offset}:{limit}:pending",
+                            )
+                        ]
+                    ]
+                ),
             )
             return
 
@@ -787,9 +802,16 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             await query.edit_message_text(
                 "🛑 <b>Bulk Reject</b>\n\nNhập số lượng bài muốn reject (1-20):",
                 parse_mode=ParseMode.HTML,
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("Cancel", callback_data=f"page:{site_id}:{offset}:{limit}:pending")]
-                ])
+                reply_markup=InlineKeyboardMarkup(
+                    [
+                        [
+                            InlineKeyboardButton(
+                                "Cancel",
+                                callback_data=f"page:{site_id}:{offset}:{limit}:pending",
+                            )
+                        ]
+                    ]
+                ),
             )
             return
 
@@ -809,9 +831,16 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             await query.edit_message_text(
                 "📢 <b>Bulk Publish</b>\n\nNhập số lượng bài muốn publish (1-20):",
                 parse_mode=ParseMode.HTML,
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("Cancel", callback_data=f"page:{site_id}:{offset}:{limit}:approved")]
-                ])
+                reply_markup=InlineKeyboardMarkup(
+                    [
+                        [
+                            InlineKeyboardButton(
+                                "Cancel",
+                                callback_data=f"page:{site_id}:{offset}:{limit}:approved",
+                            )
+                        ]
+                    ]
+                ),
             )
             return
 
@@ -957,7 +986,9 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             site_id = context.user_data.get(f"bulk_site_{query.from_user.id}", 1)
             offset = context.user_data.get(f"bulk_offset_{query.from_user.id}", 0)
             limit = context.user_data.get(f"bulk_limit_{query.from_user.id}", 10)
-            status = context.user_data.get(f"bulk_status_{query.from_user.id}", "pending")
+            status = context.user_data.get(
+                f"bulk_status_{query.from_user.id}", "pending"
+            )
             rows = _fetch_by_status(site_id, status, offset, count)
             ok_count = 0
             for r in rows:
@@ -966,9 +997,16 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
                     ok_count += 1
             await query.edit_message_text(
                 f"✅ Đã approve {ok_count}/{count} mục.",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("⬅️ Back to Queue", callback_data=f"page:{site_id}:{offset}:{limit}:{status}")]
-                ])
+                reply_markup=InlineKeyboardMarkup(
+                    [
+                        [
+                            InlineKeyboardButton(
+                                "⬅️ Back to Queue",
+                                callback_data=f"page:{site_id}:{offset}:{limit}:{status}",
+                            )
+                        ]
+                    ]
+                ),
             )
             return
 
@@ -981,12 +1019,24 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             # Hiển thị menu chọn lý do
             buttons = [
                 [
-                    InlineKeyboardButton("Duplicate", callback_data=f"bulk_reject_confirm:{count}:duplicate"),
-                    InlineKeyboardButton("LowQuality", callback_data=f"bulk_reject_confirm:{count}:lowquality"),
+                    InlineKeyboardButton(
+                        "Duplicate",
+                        callback_data=f"bulk_reject_confirm:{count}:duplicate",
+                    ),
+                    InlineKeyboardButton(
+                        "LowQuality",
+                        callback_data=f"bulk_reject_confirm:{count}:lowquality",
+                    ),
                 ],
                 [
-                    InlineKeyboardButton("Irrelevant", callback_data=f"bulk_reject_confirm:{count}:irrelevant"),
-                    InlineKeyboardButton("NoReason", callback_data=f"bulk_reject_confirm:{count}:noreason"),
+                    InlineKeyboardButton(
+                        "Irrelevant",
+                        callback_data=f"bulk_reject_confirm:{count}:irrelevant",
+                    ),
+                    InlineKeyboardButton(
+                        "NoReason",
+                        callback_data=f"bulk_reject_confirm:{count}:noreason",
+                    ),
                 ],
                 [
                     InlineKeyboardButton("❌ Cancel", callback_data="bulk_cancel"),
@@ -995,7 +1045,7 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             await query.edit_message_text(
                 f"🛑 <b>Bulk Reject {count} mục</b>\n\nChọn lý do từ chối:",
                 parse_mode=ParseMode.HTML,
-                reply_markup=InlineKeyboardMarkup(buttons)
+                reply_markup=InlineKeyboardMarkup(buttons),
             )
             return
 
@@ -1009,7 +1059,9 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             site_id = context.user_data.get(f"bulk_site_{query.from_user.id}", 1)
             offset = context.user_data.get(f"bulk_offset_{query.from_user.id}", 0)
             limit = context.user_data.get(f"bulk_limit_{query.from_user.id}", 10)
-            status = context.user_data.get(f"bulk_status_{query.from_user.id}", "approved")
+            status = context.user_data.get(
+                f"bulk_status_{query.from_user.id}", "approved"
+            )
             rows = _fetch_by_status(site_id, status, offset, count)
             pub = 0
             for r in rows:
@@ -1018,9 +1070,16 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
                     pub += 1
             await query.edit_message_text(
                 f"📢 Đã publish {pub}/{count} mục (Approved).",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("⬅️ Back to Queue", callback_data=f"page:{site_id}:{offset}:{limit}:{status}")]
-                ])
+                reply_markup=InlineKeyboardMarkup(
+                    [
+                        [
+                            InlineKeyboardButton(
+                                "⬅️ Back to Queue",
+                                callback_data=f"page:{site_id}:{offset}:{limit}:{status}",
+                            )
+                        ]
+                    ]
+                ),
             )
             return
 
@@ -1029,11 +1088,13 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
                 count = int(parts[1])
                 reason_key = parts[2]
             except Exception:
-                await query.edit_message_text("❌ Tham số bulk reject confirm không hợp lệ.")
+                await query.edit_message_text(
+                    "❌ Tham số bulk reject confirm không hợp lệ."
+                )
                 return
             reason_map = {
                 "duplicate": "duplicate",
-                "lowquality": "low_quality", 
+                "lowquality": "low_quality",
                 "irrelevant": "irrelevant",
                 "noreason": "",
             }
@@ -1042,7 +1103,9 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             site_id = context.user_data.get(f"bulk_site_{query.from_user.id}", 1)
             offset = context.user_data.get(f"bulk_offset_{query.from_user.id}", 0)
             limit = context.user_data.get(f"bulk_limit_{query.from_user.id}", 10)
-            status = context.user_data.get(f"bulk_status_{query.from_user.id}", "pending")
+            status = context.user_data.get(
+                f"bulk_status_{query.from_user.id}", "pending"
+            )
             rows = _fetch_by_status(site_id, status, offset, count)
             rej = 0
             for r in rows:
@@ -1051,9 +1114,16 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
                     rej += 1
             await query.edit_message_text(
                 f"🛑 Đã reject {rej}/{count} mục. Lý do: {reason or 'n/a'}",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("⬅️ Back to Queue", callback_data=f"page:{site_id}:{offset}:{limit}:{status}")]
-                ])
+                reply_markup=InlineKeyboardMarkup(
+                    [
+                        [
+                            InlineKeyboardButton(
+                                "⬅️ Back to Queue",
+                                callback_data=f"page:{site_id}:{offset}:{limit}:{status}",
+                            )
+                        ]
+                    ]
+                ),
             )
             return
 
@@ -1193,6 +1263,60 @@ async def cmd_find(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             return
         lines = [f"#{r.id} [{r.status}] • {r.title[:80]}" for r in rows]
         await update.message.reply_text("🔎 Kết quả:\n" + "\n".join(lines))
+    finally:
+        db.close()
+
+
+async def cmd_createtest(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Tạo bài test để kiểm tra phân trang"""
+    if not await _ensure_admin(update):
+        return
+    
+    args = context.args if context.args else []
+    count = int(args[0]) if len(args) > 0 and args[0].isdigit() else 20
+    count = max(1, min(count, 100))  # Giới hạn 1-100
+    
+    db = SessionLocal()
+    try:
+        # Lấy site đầu tiên
+        site = db.query(Site).first()
+        if not site:
+            await update.message.reply_text("❌ Không có site nào. Vui lòng tạo site trước.")
+            return
+        
+        # Tạo bài test
+        created = 0
+        for i in range(1, count + 1):
+            content = ContentQueue(
+                site_id=site.id,
+                title=f"Test Article #{i:03d} - {datetime.now().strftime('%H:%M:%S')}",
+                body=f"Đây là nội dung test số {i}. Bài viết này được tạo tự động để test tính năng phân trang của Telegram bot. Nội dung bao gồm các thông tin cần thiết để kiểm tra các chức năng approve, reject và publish. Bài viết có độ dài vừa phải để hiển thị tốt trong giao diện bot.",
+                status="pending",
+                created_at=datetime.utcnow()
+            )
+            db.add(content)
+            created += 1
+        
+        db.commit()
+        
+        # Thống kê
+        total_pending = db.query(ContentQueue).filter(
+            ContentQueue.site_id == site.id, 
+            ContentQueue.status == "pending"
+        ).count()
+        
+        await update.message.reply_text(
+            f"✅ <b>Đã tạo {created} bài test</b>\n\n"
+            f"📊 <b>Thống kê site #{site.id}:</b>\n"
+            f"• Pending: {total_pending} bài\n"
+            f"• Có thể test: <code>/queue {site.id} pending</code>\n"
+            f"• Phân trang: <code>/queue {site.id} 10 pending</code>",
+            parse_mode=ParseMode.HTML
+        )
+        
+    except Exception as e:
+        await update.message.reply_text(f"❌ Lỗi: {e}")
+        db.rollback()
     finally:
         db.close()
 
@@ -1486,10 +1610,10 @@ async def handle_bulk_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     """Xử lý input số lượng cho bulk actions"""
     if not await _ensure_admin(update):
         return
-    
+
     user_id = update.effective_user.id
     text = update.message.text.strip()
-    
+
     # Kiểm tra xem có phải là số không
     try:
         count = int(text)
@@ -1499,28 +1623,34 @@ async def handle_bulk_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     except ValueError:
         await update.message.reply_text("❌ Vui lòng nhập số hợp lệ (1-20).")
         return
-    
+
     # Lưu vào context để sử dụng trong callback
     context.user_data[f"bulk_count_{user_id}"] = count
-    
+
     # Hiển thị menu chọn action
     buttons = [
         [
-            InlineKeyboardButton("✅ Approve", callback_data=f"bulk_approve_exec:{count}"),
-            InlineKeyboardButton("🛑 Reject", callback_data=f"bulk_reject_exec:{count}"),
+            InlineKeyboardButton(
+                "✅ Approve", callback_data=f"bulk_approve_exec:{count}"
+            ),
+            InlineKeyboardButton(
+                "🛑 Reject", callback_data=f"bulk_reject_exec:{count}"
+            ),
         ],
         [
-            InlineKeyboardButton("📢 Publish", callback_data=f"bulk_publish_exec:{count}"),
+            InlineKeyboardButton(
+                "📢 Publish", callback_data=f"bulk_publish_exec:{count}"
+            ),
         ],
         [
             InlineKeyboardButton("❌ Cancel", callback_data="bulk_cancel"),
         ],
     ]
-    
+
     await update.message.reply_text(
         f"🎯 <b>Bulk Action</b>\n\nSố lượng: <b>{count}</b> bài\nChọn hành động:",
         parse_mode=ParseMode.HTML,
-        reply_markup=InlineKeyboardMarkup(buttons)
+        reply_markup=InlineKeyboardMarkup(buttons),
     )
 
 
@@ -1598,6 +1728,7 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("health", cmd_health))
     app.add_handler(CommandHandler("approve", cmd_approve))
     app.add_handler(CommandHandler("reject", cmd_reject))
+    app.add_handler(CommandHandler("createtest", cmd_createtest))
     app.add_handler(CallbackQueryHandler(on_action_button))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_bulk_input))
     return app
