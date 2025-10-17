@@ -345,61 +345,55 @@ async def _send_queue_page(
         )
 
     # Không có filter buttons nữa - sử dụng lệnh text
-    
-    # Gửi danh sách compact trong 1 message
+
+    # Gửi danh sách dạng bảng đơn giản
     if rows:
-        # Tạo danh sách compact
-        items_text = []
+        # Tạo bảng đơn giản
+        table_lines = []
         for i, r in enumerate(rows, 1):
-            # Format: 1. #123 • Title (truncated) • Status
-            title_short = r.title[:50] + "..." if len(r.title) > 50 else r.title
-            status_icon = "⏳" if status == "pending" else "✅" if status == "approved" else "🛑" if status == "rejected" else "📢"
-            items_text.append(f"{i:2d}. {status_icon} <b>#{r.id}</b> • {title_short}")
-        
-        # Tạo nút hành động cho từng item (gộp nhiều item trên 1 hàng)
+            # Format: #123  Title  [👁] [✅] [🛑]
+            title_short = r.title[:30] + "..." if len(r.title) > 30 else r.title
+            table_lines.append(f"<b>#{r.id}</b>  {title_short}  [👁] [✅] [🛑]")
+
+        # Tạo nút hành động cho từng item
         action_buttons = []
-        items_per_row = 3  # 3 item trên 1 hàng nút
-        
-        for i in range(0, len(rows), items_per_row):
+        for i, r in enumerate(rows, 1):
             row_buttons = []
-            for j in range(i, min(i + items_per_row, len(rows))):
-                r = rows[j]
-                item_num = j + 1
-                
-                # Nút View
+            
+            # Nút View
+            row_buttons.append(
+                InlineKeyboardButton(
+                    text=f"👁 {i}",
+                    callback_data=f"view:{r.id}:{site_id}:{offset}:{limit}:{status}",
+                )
+            )
+            
+            # Nút hành động theo trạng thái
+            if status == "pending":
+                row_buttons.extend([
+                    InlineKeyboardButton(
+                        text=f"✅ {i}",
+                        callback_data=f"approve:{r.id}:{site_id}:{offset}:{limit}:{status}",
+                    ),
+                    InlineKeyboardButton(
+                        text=f"🛑 {i}",
+                        callback_data=f"reject:{r.id}:{site_id}:{offset}:{limit}:{status}",
+                    ),
+                ])
+            elif status == "approved":
                 row_buttons.append(
                     InlineKeyboardButton(
-                        text=f"👁{item_num}",
-                        callback_data=f"view:{r.id}:{site_id}:{offset}:{limit}:{status}",
+                        text=f"📢 {i}",
+                        callback_data=f"publish:{r.id}:{site_id}:{offset}:{limit}:{status}",
                     )
                 )
-                
-                # Nút hành động theo trạng thái
-                if status == "pending":
-                    row_buttons.extend([
-                        InlineKeyboardButton(
-                            text=f"✅{item_num}",
-                            callback_data=f"approve:{r.id}:{site_id}:{offset}:{limit}:{status}",
-                        ),
-                        InlineKeyboardButton(
-                            text=f"🛑{item_num}",
-                            callback_data=f"reject:{r.id}:{site_id}:{offset}:{limit}:{status}",
-                        ),
-                    ])
-                elif status == "approved":
-                    row_buttons.append(
-                        InlineKeyboardButton(
-                            text=f"📢{item_num}",
-                            callback_data=f"publish:{r.id}:{site_id}:{offset}:{limit}:{status}",
-                        )
-                    )
-                # rejected không có nút hành động, chỉ xem
+            # rejected không có nút hành động, chỉ xem
             
             action_buttons.append(row_buttons)
-        
+
         # Gộp tất cả vào 1 message
-        full_text = f"{header}\n\n" + "\n".join(items_text)
-        
+        full_text = f"{header}\n\n" + "\n".join(table_lines)
+
         await bot.send_message(
             chat_id,
             full_text,
