@@ -2,23 +2,24 @@ import asyncio
 import os
 from datetime import datetime, timedelta, timezone
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 import requests
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+
 try:
     from telegram.constants import ParseMode  # PTB v20+
+
     PARSE_MODE_HTML = ParseMode.HTML
 except Exception:  # pragma: no cover
     try:
         from telegram import ParseMode  # PTB v13 fallback
+
         PARSE_MODE_HTML = ParseMode.HTML
     except Exception:
         ParseMode = None  # type: ignore
         PARSE_MODE_HTML = "HTML"
-from telegram.ext import Application, CommandHandler, ContextTypes, CallbackQueryHandler
-
+from src.database.models import AuditLog, ContentQueue, Site, TelegramAdmin
 from src.database.session import SessionLocal
-from src.database.models import Site, ContentQueue, TelegramAdmin, AuditLog
-
+from telegram.ext import Application, CallbackQueryHandler, CommandHandler, ContextTypes
 
 _ENV_ADMIN_IDS: set[int] = set()
 _OWNER_ID: int | None = None
@@ -41,6 +42,7 @@ def _load_env_file_if_present(path: str = "/app/.env") -> None:
     except Exception:
         # Best-effort; ignore
         pass
+
 
 def _load_env_admin_ids() -> set[int]:
     raw = os.getenv("TELEGRAM_ADMINS", "").strip()
@@ -72,7 +74,9 @@ def _is_admin_user_id(user_id: int) -> bool:
         return True
     db = SessionLocal()
     try:
-        exists = db.query(TelegramAdmin).filter(TelegramAdmin.user_id == user_id).first()
+        exists = (
+            db.query(TelegramAdmin).filter(TelegramAdmin.user_id == user_id).first()
+        )
         return exists is not None
     finally:
         db.close()
@@ -110,7 +114,7 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "📖 <b>Danh sách lệnh</b>",
         "",
         "🔎 <b>Nội dung & duyệt</b>",
-        "• <b>/queue</b> <code>&lt;site_id&gt; [n] [status]</code> – xem hàng đợi (pending/approved/rejected, có nút View/Approve/Reject/Publish, phân trang)",
+        "• <b>/queue</b> <code>&lt;site_id&gt; [n] [status]</code> – xem hàng đợi (mặc định pending, n=10)",
         "• <b>/approve</b> <code>&lt;id&gt;</code> – duyệt nội dung",
         "• <b>/reject</b> <code>&lt;id&gt; [lý_do]</code> – từ chối",
         "• <b>/publish</b> <code>&lt;id&gt;</code> – publish ngay",
@@ -197,20 +201,24 @@ async def cmd_queue(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     except ValueError:
         await update.message.reply_text("Tham số không hợp lệ. Ví dụ: /queue 1 10")
         return
-    
+
     # Fallback logic: nếu không có bài pending, thử approved
     if status == "pending":
         available_statuses = _get_available_statuses(site_id)
         if "pending" not in available_statuses and available_statuses:
             status = available_statuses[0]  # Lấy trạng thái đầu tiên có dữ liệu
-    
+
     chat = update.effective_chat
     if not chat:
         return
-    await _send_queue_page(context.bot, chat.id, site_id=site_id, offset=0, limit=limit, status=status)
+    await _send_queue_page(
+        context.bot, chat.id, site_id=site_id, offset=0, limit=limit, status=status
+    )
 
 
-def _fetch_by_status(site_id: int, status: str, offset: int, limit: int) -> list[ContentQueue]:
+def _fetch_by_status(
+    site_id: int, status: str, offset: int, limit: int
+) -> list[ContentQueue]:
     db = SessionLocal()
     try:
         rows = (
@@ -232,10 +240,11 @@ def _get_available_statuses(site_id: int) -> list[str]:
     try:
         statuses = []
         for status in ["pending", "approved", "rejected"]:
-            count = db.query(ContentQueue).filter(
-                ContentQueue.site_id == site_id,
-                ContentQueue.status == status
-            ).count()
+            count = (
+                db.query(ContentQueue)
+                .filter(ContentQueue.site_id == site_id, ContentQueue.status == status)
+                .count()
+            )
             if count > 0:
                 statuses.append(status)
         return statuses
@@ -243,7 +252,9 @@ def _get_available_statuses(site_id: int) -> list[str]:
         db.close()
 
 
-async def _send_queue_page(bot, chat_id: int, site_id: int, offset: int, limit: int, status: str = "pending") -> None:
+async def _send_queue_page(
+    bot, chat_id: int, site_id: int, offset: int, limit: int, status: str = "pending"
+) -> None:
     rows = _fetch_by_status(site_id, status, offset, limit)
     if not rows:
         available_statuses = _get_available_statuses(site_id)
@@ -264,58 +275,57 @@ async def _send_queue_page(bot, chat_id: int, site_id: int, offset: int, limit: 
     header_rows = [
         [
             InlineKeyboardButton(
-                "⬅️ Prev", callback_data=f"page:{site_id}:{max(0, offset - limit)}:{limit}:{status}"
+                "⬅️ Prev",
+                callback_data=f"page:{site_id}:{max(0, offset - limit)}:{limit}:{status}",
             ),
             InlineKeyboardButton(
-                "➡️ Next", callback_data=f"page:{site_id}:{offset + limit}:{limit}:{status}"
+                "➡️ Next",
+                callback_data=f"page:{site_id}:{offset + limit}:{limit}:{status}",
             ),
         ],
     ]
-    
+
     # Bulk actions theo trạng thái
     if status == "pending":
-        header_rows.extend([
+        header_rows.extend(
             [
-                InlineKeyboardButton(
-                    "✅ Bulk Approve 3", callback_data=f"bulk_approve:{site_id}:{offset}:{limit}:3"
-                ),
-                InlineKeyboardButton(
-                    "✅ Bulk Approve 5", callback_data=f"bulk_approve:{site_id}:{offset}:{limit}:5"
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    "🛑 Bulk Reject 3", callback_data=f"bulk_reject_pick:{site_id}:{offset}:{limit}:3"
-                ),
-                InlineKeyboardButton(
-                    "🛑 Bulk Reject 5", callback_data=f"bulk_reject_pick:{site_id}:{offset}:{limit}:5"
-                ),
-            ],
-        ])
+                [
+                    InlineKeyboardButton(
+                        "✅ Bulk Approve 3",
+                        callback_data=f"bulk_approve:{site_id}:{offset}:{limit}:3",
+                    ),
+                    InlineKeyboardButton(
+                        "✅ Bulk Approve 5",
+                        callback_data=f"bulk_approve:{site_id}:{offset}:{limit}:5",
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        "🛑 Bulk Reject 3",
+                        callback_data=f"bulk_reject_pick:{site_id}:{offset}:{limit}:3",
+                    ),
+                    InlineKeyboardButton(
+                        "🛑 Bulk Reject 5",
+                        callback_data=f"bulk_reject_pick:{site_id}:{offset}:{limit}:5",
+                    ),
+                ],
+            ]
+        )
     elif status == "approved":
-        header_rows.append([
-            InlineKeyboardButton(
-                "📢 Bulk Publish 3", callback_data=f"bulk_publish:{site_id}:{offset}:{limit}:3"
-            ),
-            InlineKeyboardButton(
-                "📢 Bulk Publish 5", callback_data=f"bulk_publish:{site_id}:{offset}:{limit}:5"
-            ),
-        ])
-    
-    # Filter buttons
-    available_statuses = _get_available_statuses(site_id)
-    filter_buttons = []
-    for st in ["pending", "approved", "rejected"]:
-        if st in available_statuses:
-            label = "Pending" if st == "pending" else "Approved" if st == "approved" else "Rejected"
-            filter_buttons.append(
+        header_rows.append(
+            [
                 InlineKeyboardButton(
-                    f"Filter: {label}", callback_data=f"filter:{site_id}:{offset}:{limit}:{st}"
-                )
-            )
-    
-    if filter_buttons:
-        header_rows.append(filter_buttons)
+                    "📢 Bulk Publish 3",
+                    callback_data=f"bulk_publish:{site_id}:{offset}:{limit}:3",
+                ),
+                InlineKeyboardButton(
+                    "📢 Bulk Publish 5",
+                    callback_data=f"bulk_publish:{site_id}:{offset}:{limit}:5",
+                ),
+            ]
+        )
+
+    # Không có filter buttons nữa - sử dụng lệnh text
     await bot.send_message(
         chat_id,
         header,
@@ -327,29 +337,40 @@ async def _send_queue_page(bot, chat_id: int, site_id: int, offset: int, limit: 
         text = f"<b>#{r.id}</b> • {r.title[:80]}"
         buttons = [
             InlineKeyboardButton(
-                text="👁 View", callback_data=f"view:{r.id}:{site_id}:{offset}:{limit}:{status}"
+                text="👁 View",
+                callback_data=f"view:{r.id}:{site_id}:{offset}:{limit}:{status}",
             ),
         ]
-        
+
         # Nút hành động theo trạng thái
         if status == "pending":
-            buttons.extend([
-                InlineKeyboardButton(
-                    text="✅ Approve", callback_data=f"approve:{r.id}:{site_id}:{offset}:{limit}:{status}"
-                ),
-                InlineKeyboardButton(
-                    text="🛑 Reject", callback_data=f"reject:{r.id}:{site_id}:{offset}:{limit}:{status}"
-                ),
-            ])
+            buttons.extend(
+                [
+                    InlineKeyboardButton(
+                        text="✅ Approve",
+                        callback_data=f"approve:{r.id}:{site_id}:{offset}:{limit}:{status}",
+                    ),
+                    InlineKeyboardButton(
+                        text="🛑 Reject",
+                        callback_data=f"reject:{r.id}:{site_id}:{offset}:{limit}:{status}",
+                    ),
+                ]
+            )
         elif status == "approved":
             buttons.append(
                 InlineKeyboardButton(
-                    text="📢 Publish", callback_data=f"publish:{r.id}:{site_id}:{offset}:{limit}:{status}"
+                    text="📢 Publish",
+                    callback_data=f"publish:{r.id}:{site_id}:{offset}:{limit}:{status}",
                 )
             )
         # rejected không có nút hành động, chỉ xem
-        
-        await bot.send_message(chat_id, text, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup([buttons]))
+
+        await bot.send_message(
+            chat_id,
+            text,
+            parse_mode=ParseMode.HTML,
+            reply_markup=InlineKeyboardMarkup([buttons]),
+        )
 
 
 async def cmd_publish(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -364,13 +385,20 @@ async def cmd_publish(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     try:
         item = db.get(ContentQueue, int(content_id))
         if not item:
-            await update.message.reply_text(f"❌ Không tìm thấy content <code>#{content_id}</code>.", parse_mode=ParseMode.HTML)
+            await update.message.reply_text(
+                f"❌ Không tìm thấy content <code>#{content_id}</code>.",
+                parse_mode=ParseMode.HTML,
+            )
             return
         if item.status == "published":
-            await update.message.reply_text("⚠️ Mục này đã <b>published</b> rồi.", parse_mode=ParseMode.HTML)
+            await update.message.reply_text(
+                "⚠️ Mục này đã <b>published</b> rồi.", parse_mode=ParseMode.HTML
+            )
             return
         if item.status != "approved":
-            await update.message.reply_text("⚠️ Chỉ publish mục đã <b>Approved</b>.", parse_mode=ParseMode.HTML)
+            await update.message.reply_text(
+                "⚠️ Chỉ publish mục đã <b>Approved</b>.", parse_mode=ParseMode.HTML
+            )
             return
         item.status = "published"
         item.updated_at = datetime.utcnow()
@@ -384,12 +412,17 @@ async def cmd_publish(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             )
         )
         db.commit()
-        await update.message.reply_text(f"📢 Đã publish content <code>#{content_id}</code>.", parse_mode=ParseMode.HTML)
+        await update.message.reply_text(
+            f"📢 Đã publish content <code>#{content_id}</code>.",
+            parse_mode=ParseMode.HTML,
+        )
     finally:
         db.close()
 
 
-def _approve_item(db: SessionLocal, content_id: int, actor_user_id: int) -> tuple[bool, str]:
+def _approve_item(
+    db: SessionLocal, content_id: int, actor_user_id: int
+) -> tuple[bool, str]:
     item = db.get(ContentQueue, content_id)
     if not item:
         return False, f"❌ Không tìm thấy content <code>#{content_id}</code>."
@@ -413,12 +446,17 @@ def _approve_item(db: SessionLocal, content_id: int, actor_user_id: int) -> tupl
     return True, f"✅ Đã duyệt content <code>#{content_id}</code>."
 
 
-def _reject_item(db: SessionLocal, content_id: int, actor_user_id: int, reason: str) -> tuple[bool, str]:
+def _reject_item(
+    db: SessionLocal, content_id: int, actor_user_id: int, reason: str
+) -> tuple[bool, str]:
     item = db.get(ContentQueue, content_id)
     if not item:
         return False, f"❌ Không tìm thấy content <code>#{content_id}</code>."
     if item.status == "published":
-        return False, f"⚠️ Content <code>#{content_id}</code> đã <b>published</b>, không thể từ chối."
+        return (
+            False,
+            f"⚠️ Content <code>#{content_id}</code> đã <b>published</b>, không thể từ chối.",
+        )
     item.status = "rejected"
     item.updated_at = datetime.utcnow()
     db.add(
@@ -431,10 +469,15 @@ def _reject_item(db: SessionLocal, content_id: int, actor_user_id: int, reason: 
         )
     )
     db.commit()
-    return True, f"🛑 Đã từ chối content <code>#{content_id}</code><br/>• Lý do: <i>{reason}</i>"
+    return (
+        True,
+        f"🛑 Đã từ chối content <code>#{content_id}</code><br/>• Lý do: <i>{reason}</i>",
+    )
 
 
-def _publish_item(db: SessionLocal, content_id: int, actor_user_id: int) -> tuple[bool, str]:
+def _publish_item(
+    db: SessionLocal, content_id: int, actor_user_id: int
+) -> tuple[bool, str]:
     item = db.get(ContentQueue, content_id)
     if not item:
         return False, f"❌ Không tìm thấy content <code>#{content_id}</code>."
@@ -466,7 +509,9 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         action = parts[0]
         content_id = int(parts[1]) if len(parts) > 1 else 0
         site_ctx = int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else None
-        offset_ctx = int(parts[3]) if len(parts) > 3 and parts[3].lstrip("-").isdigit() else 0
+        offset_ctx = (
+            int(parts[3]) if len(parts) > 3 and parts[3].lstrip("-").isdigit() else 0
+        )
         limit_ctx = int(parts[4]) if len(parts) > 4 and parts[4].isdigit() else 10
         extra = parts[5] if len(parts) > 5 else None
     except Exception:
@@ -476,20 +521,49 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     try:
         if action == "approve":
             ok, msg = _approve_item(db, content_id, query.from_user.id)
-            back = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data=f"page:{site_ctx}:{offset_ctx}")]]) if site_ctx is not None else None
-            await query.edit_message_text(msg, parse_mode=ParseMode.HTML, reply_markup=back)
+            back = (
+                InlineKeyboardMarkup(
+                    [
+                        [
+                            InlineKeyboardButton(
+                                "⬅️ Back", callback_data=f"page:{site_ctx}:{offset_ctx}:{limit_ctx}:pending"
+                            )
+                        ]
+                    ]
+                )
+                if site_ctx is not None
+                else None
+            )
+            await query.edit_message_text(
+                msg, parse_mode=ParseMode.HTML, reply_markup=back
+            )
             return
 
         if action == "view":
             item = db.get(ContentQueue, content_id)
             if not item:
                 await query.edit_message_text(
-                    f"❌ Không tìm thấy content <code>#{content_id}</code>.", parse_mode=ParseMode.HTML
+                    f"❌ Không tìm thấy content <code>#{content_id}</code>.",
+                    parse_mode=ParseMode.HTML,
                 )
                 return
             body = (item.body or "").strip()
-            snippet = (body[:900] + ("…" if len(body) > 900 else "")) if body else "(trống)"
-            back = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data=f"page:{site_ctx}:{offset_ctx}")]]) if site_ctx is not None else None
+            snippet = (
+                (body[:900] + ("…" if len(body) > 900 else "")) if body else "(trống)"
+            )
+            back = (
+                InlineKeyboardMarkup(
+                    [
+                        [
+                            InlineKeyboardButton(
+                                "⬅️ Back", callback_data=f"page:{site_ctx}:{offset_ctx}:{limit_ctx}:{status_ctx}"
+                            )
+                        ]
+                    ]
+                )
+                if site_ctx is not None
+                else None
+            )
             await query.edit_message_text(
                 f"<b>#{content_id}</b> • {item.title[:80]}\n<code>{snippet}</code>",
                 parse_mode=ParseMode.HTML,
@@ -499,14 +573,32 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
         if action == "reject":
             # Hiển thị gợi ý lý do nhanh
-            buttons = [[
-                InlineKeyboardButton(text="Duplicate", callback_data=f"confirm_reject:{content_id}:{site_ctx}:{offset_ctx}:{limit_ctx}:duplicate"),
-                InlineKeyboardButton(text="LowQuality", callback_data=f"confirm_reject:{content_id}:{site_ctx}:{offset_ctx}:{limit_ctx}:lowquality"),
-                InlineKeyboardButton(text="Irrelevant", callback_data=f"confirm_reject:{content_id}:{site_ctx}:{offset_ctx}:{limit_ctx}:irrelevant"),
-            ], [
-                InlineKeyboardButton(text="NoReason", callback_data=f"confirm_reject:{content_id}:{site_ctx}:{offset_ctx}:{limit_ctx}:noreason"),
-                InlineKeyboardButton(text="Cancel", callback_data=f"cancel:{content_id}:{site_ctx}:{offset_ctx}:{limit_ctx}"),
-            ]]
+            buttons = [
+                [
+                    InlineKeyboardButton(
+                        text="Duplicate",
+                        callback_data=f"confirm_reject:{content_id}:{site_ctx}:{offset_ctx}:{limit_ctx}:duplicate",
+                    ),
+                    InlineKeyboardButton(
+                        text="LowQuality",
+                        callback_data=f"confirm_reject:{content_id}:{site_ctx}:{offset_ctx}:{limit_ctx}:lowquality",
+                    ),
+                    InlineKeyboardButton(
+                        text="Irrelevant",
+                        callback_data=f"confirm_reject:{content_id}:{site_ctx}:{offset_ctx}:{limit_ctx}:irrelevant",
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="NoReason",
+                        callback_data=f"confirm_reject:{content_id}:{site_ctx}:{offset_ctx}:{limit_ctx}:noreason",
+                    ),
+                    InlineKeyboardButton(
+                        text="Cancel",
+                        callback_data=f"cancel:{content_id}:{site_ctx}:{offset_ctx}:{limit_ctx}",
+                    ),
+                ],
+            ]
             await query.edit_message_text(
                 f"🛑 Chọn lý do từ chối cho <code>#{content_id}</code>:",
                 parse_mode=ParseMode.HTML,
@@ -523,16 +615,38 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             }
             reason = reason_map.get((extra or "").lower(), extra or "")
             ok, msg = _reject_item(db, content_id, query.from_user.id, reason)
-            back = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data=f"page:{site_ctx}:{offset_ctx}")]]) if site_ctx is not None else None
-            await query.edit_message_text(msg, parse_mode=ParseMode.HTML, reply_markup=back)
+            back = (
+                InlineKeyboardMarkup(
+                    [
+                        [
+                            InlineKeyboardButton(
+                                "⬅️ Back", callback_data=f"page:{site_ctx}:{offset_ctx}:{limit_ctx}:pending"
+                            )
+                        ]
+                    ]
+                )
+                if site_ctx is not None
+                else None
+            )
+            await query.edit_message_text(
+                msg, parse_mode=ParseMode.HTML, reply_markup=back
+            )
             return
 
         if action == "publish":
             # Hiển thị xác nhận publish
-            buttons = [[
-                InlineKeyboardButton(text="✅ Confirm Publish", callback_data=f"confirm_publish:{content_id}:{site_ctx}:{offset_ctx}:{limit_ctx}"),
-                InlineKeyboardButton(text="Cancel", callback_data=f"cancel:{content_id}:{site_ctx}:{offset_ctx}:{limit_ctx}"),
-            ]]
+            buttons = [
+                [
+                    InlineKeyboardButton(
+                        text="✅ Confirm Publish",
+                        callback_data=f"confirm_publish:{content_id}:{site_ctx}:{offset_ctx}:{limit_ctx}",
+                    ),
+                    InlineKeyboardButton(
+                        text="Cancel",
+                        callback_data=f"cancel:{content_id}:{site_ctx}:{offset_ctx}:{limit_ctx}",
+                    ),
+                ]
+            ]
             await query.edit_message_text(
                 f"📢 Xác nhận publish <code>#{content_id}</code>?",
                 parse_mode=ParseMode.HTML,
@@ -542,19 +656,46 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
         if action == "confirm_publish":
             ok, msg = _publish_item(db, content_id, query.from_user.id)
-            back = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data=f"page:{site_ctx}:{offset_ctx}")]]) if site_ctx is not None else None
-            await query.edit_message_text(msg, parse_mode=ParseMode.HTML, reply_markup=back)
+            back = (
+                InlineKeyboardMarkup(
+                    [
+                        [
+                            InlineKeyboardButton(
+                                "⬅️ Back", callback_data=f"page:{site_ctx}:{offset_ctx}:{limit_ctx}:approved"
+                            )
+                        ]
+                    ]
+                )
+                if site_ctx is not None
+                else None
+            )
+            await query.edit_message_text(
+                msg, parse_mode=ParseMode.HTML, reply_markup=back
+            )
             return
 
         if action == "cancel":
-            back = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data=f"page:{site_ctx}:{offset_ctx}")]]) if site_ctx is not None else None
+            back = (
+                InlineKeyboardMarkup(
+                    [
+                        [
+                            InlineKeyboardButton(
+                                "⬅️ Back", callback_data=f"page:{site_ctx}:{offset_ctx}:{limit_ctx}:{status_ctx}"
+                            )
+                        ]
+                    ]
+                )
+                if site_ctx is not None
+                else None
+            )
             await query.edit_message_text("⏹ Đã hủy thao tác.", reply_markup=back)
             return
 
         if action == "copy_myid":
             # Simply re-send the ID in a code block so user can long-press to copy
             await query.edit_message_text(
-                f"👤 <b>User ID</b>: <code>{content_id}</code>", parse_mode=ParseMode.HTML
+                f"👤 <b>User ID</b>: <code>{content_id}</code>",
+                parse_mode=ParseMode.HTML,
             )
             return
 
@@ -580,29 +721,29 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             chat = update.effective_chat
             if chat:
                 # Gửi message mới, giữ nguyên thread
-                await _send_queue_page(context.bot, chat.id, site_id=site_id, offset=new_offset, limit=new_limit or 10, status=new_status)
+                await _send_queue_page(
+                    context.bot,
+                    chat.id,
+                    site_id=site_id,
+                    offset=new_offset,
+                    limit=new_limit or 10,
+                    status=new_status,
+                )
             return
 
-        if action == "filter":
-            try:
-                site_id = int(parts[1]); new_offset = int(parts[2]); new_limit = int(parts[3]); new_status = parts[4]
-            except Exception:
-                await query.edit_message_text("❌ Tham số filter không hợp lệ.")
-                return
-            await query.edit_message_text("🔄 Đang lọc...")
-            chat = update.effective_chat
-            if chat:
-                await _send_queue_page(context.bot, chat.id, site_id=site_id, offset=new_offset, limit=new_limit, status=new_status)
-            return
+        # Filter action đã bị loại bỏ - sử dụng lệnh text
 
         if action in {"bulk_approve", "bulk_reject_pick"}:
             try:
-                site_id = int(parts[1]); offset = int(parts[2]); limit = int(parts[3]); count = int(parts[4])
+                site_id = int(parts[1])
+                offset = int(parts[2])
+                limit = int(parts[3])
+                count = int(parts[4])
             except Exception:
                 await query.edit_message_text("❌ Tham số bulk không hợp lệ.")
                 return
             if action == "bulk_approve":
-                rows = _fetch_pending(site_id, offset, count)
+                rows = _fetch_by_status(site_id, "pending", offset, count)
                 ok_count = 0
                 for r in rows:
                     ok, _ = _approve_item(db, r.id, query.from_user.id)
@@ -610,32 +751,96 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
                         ok_count += 1
                 await query.edit_message_text(
                     f"✅ Đã approve {ok_count}/{count} mục.",
-                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data=f"page:{site_id}:{offset}")]]),
+                    reply_markup=InlineKeyboardMarkup(
+                        [
+                            [
+                                InlineKeyboardButton(
+                                    "⬅️ Back", callback_data=f"page:{site_id}:{offset}:{limit}:pending"
+                                )
+                            ]
+                        ]
+                    ),
                 )
                 return
             else:
                 # chọn lý do cho bulk reject
-                buttons = [[
-                    InlineKeyboardButton(text="Duplicate", callback_data=f"bulk_reject:{site_id}:{offset}:{limit}:{count}:duplicate"),
-                    InlineKeyboardButton(text="LowQuality", callback_data=f"bulk_reject:{site_id}:{offset}:{limit}:{count}:lowquality"),
-                    InlineKeyboardButton(text="Irrelevant", callback_data=f"bulk_reject:{site_id}:{offset}:{limit}:{count}:irrelevant"),
-                ], [
-                    InlineKeyboardButton(text="NoReason", callback_data=f"bulk_reject:{site_id}:{offset}:{limit}:{count}:noreason"),
-                    InlineKeyboardButton(text="Cancel", callback_data=f"page:{site_id}:{offset}"),
-                ]]
+                buttons = [
+                    [
+                        InlineKeyboardButton(
+                            text="Duplicate",
+                            callback_data=f"bulk_reject:{site_id}:{offset}:{limit}:{count}:duplicate",
+                        ),
+                        InlineKeyboardButton(
+                            text="LowQuality",
+                            callback_data=f"bulk_reject:{site_id}:{offset}:{limit}:{count}:lowquality",
+                        ),
+                        InlineKeyboardButton(
+                            text="Irrelevant",
+                            callback_data=f"bulk_reject:{site_id}:{offset}:{limit}:{count}:irrelevant",
+                        ),
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            text="NoReason",
+                            callback_data=f"bulk_reject:{site_id}:{offset}:{limit}:{count}:noreason",
+                        ),
+                        InlineKeyboardButton(
+                            text="Cancel", callback_data=f"page:{site_id}:{offset}:{limit}:pending"
+                        ),
+                    ],
+                ]
                 await query.edit_message_text(
-                    f"🛑 Chọn lý do từ chối {count} mục đầu trang:", reply_markup=InlineKeyboardMarkup(buttons)
+                    f"🛑 Chọn lý do từ chối {count} mục đầu trang:",
+                    reply_markup=InlineKeyboardMarkup(buttons),
                 )
                 return
 
         if action == "bulk_reject":
             try:
-                site_id = int(parts[1]); offset = int(parts[2]); limit = int(parts[3]); count = int(parts[4]); reason_key = parts[5]
+                site_id = int(parts[1])
+                offset = int(parts[2])
+                limit = int(parts[3])
+                count = int(parts[4])
+                reason_key = parts[5]
             except Exception:
                 await query.edit_message_text("❌ Tham số bulk reject không hợp lệ.")
                 return
-            reason_map = {"duplicate":"duplicate","lowquality":"low_quality","irrelevant":"irrelevant","noreason":""}
+            reason_map = {
+                "duplicate": "duplicate",
+                "lowquality": "low_quality",
+                "irrelevant": "irrelevant",
+                "noreason": "",
+            }
             reason = reason_map.get(reason_key, reason_key)
+            rows = _fetch_by_status(site_id, "pending", offset, count)
+            rej = 0
+            for r in rows:
+                ok, _ = _reject_item(db, r.id, query.from_user.id, reason)
+                if ok:
+                    rej += 1
+            await query.edit_message_text(
+                f"🛑 Đã reject {rej}/{count} mục. Lý do: {reason or 'n/a'}",
+                reply_markup=InlineKeyboardMarkup(
+                    [
+                        [
+                            InlineKeyboardButton(
+                                "⬅️ Back", callback_data=f"page:{site_id}:{offset}:{limit}:pending"
+                            )
+                        ]
+                    ]
+                ),
+            )
+            return
+
+        if action == "bulk_publish":
+            try:
+                site_id = int(parts[1])
+                offset = int(parts[2])
+                limit = int(parts[3])
+                count = int(parts[4])
+            except Exception:
+                await query.edit_message_text("❌ Tham số bulk publish không hợp lệ.")
+                return
             rows = _fetch_by_status(site_id, "approved", offset, count)
             pub = 0
             for r in rows:
@@ -644,17 +849,16 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
                     pub += 1
             await query.edit_message_text(
                 f"📢 Đã publish {pub}/{count} mục (Approved).",
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data=f"page:{site_id}:{offset}:{limit}:approved")]]),
-            )
-            return
-            rej = 0
-            for r in rows:
-                ok, _ = _reject_item(db, r.id, query.from_user.id, reason)
-                if ok:
-                    rej += 1
-            await query.edit_message_text(
-                f"🛑 Đã reject {rej}/{count} mục. Lý do: {reason or 'n/a'}",
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data=f"page:{site_id}:{offset}")]]),
+                reply_markup=InlineKeyboardMarkup(
+                    [
+                        [
+                            InlineKeyboardButton(
+                                "⬅️ Back",
+                                callback_data=f"page:{site_id}:{offset}:{limit}:approved",
+                            )
+                        ]
+                    ]
+                ),
             )
             return
 
@@ -685,7 +889,9 @@ async def cmd_setquota(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             await update.message.reply_text("❌ Không tìm thấy site.")
             return
         site.daily_quota = n
-        site.updated_at = datetime.utcnow() if hasattr(site, 'updated_at') else site.created_at
+        site.updated_at = (
+            datetime.utcnow() if hasattr(site, "updated_at") else site.created_at
+        )
         db.commit()
         await update.message.reply_text(f"✅ Đã đặt quota site #{site_id} = {n}/ngày")
     finally:
@@ -697,7 +903,9 @@ async def cmd_sethours(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         return
     args = context.args if context.args else []
     if len(args) < 3:
-        await update.message.reply_text("Cách dùng: /sethours <site_id> <start> <end> (0-23)")
+        await update.message.reply_text(
+            "Cách dùng: /sethours <site_id> <start> <end> (0-23)"
+        )
         return
     try:
         site_id = int(args[0])
@@ -716,9 +924,13 @@ async def cmd_sethours(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             return
         site.active_start_hour = start_h
         site.active_end_hour = end_h
-        site.updated_at = datetime.utcnow() if hasattr(site, 'updated_at') else site.created_at
+        site.updated_at = (
+            datetime.utcnow() if hasattr(site, "updated_at") else site.created_at
+        )
         db.commit()
-        await update.message.reply_text(f"⏱ Đã đặt giờ hoạt động site #{site_id}: {start_h}:00–{end_h}:00")
+        await update.message.reply_text(
+            f"⏱ Đã đặt giờ hoạt động site #{site_id}: {start_h}:00–{end_h}:00"
+        )
     finally:
         db.close()
 
@@ -791,11 +1003,19 @@ async def cmd_health(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     try:
         r = requests.get("http://backend:8000/health", timeout=5)
         if r.ok:
-            await update.message.reply_text(f"✅ <b>Backend OK</b>: <code>{r.text}</code>", parse_mode=ParseMode.HTML)
+            await update.message.reply_text(
+                f"✅ <b>Backend OK</b>: <code>{r.text}</code>",
+                parse_mode=ParseMode.HTML,
+            )
         else:
-            await update.message.reply_text(f"⚠️ Backend degraded: <code>{r.status_code}</code>", parse_mode=ParseMode.HTML)
+            await update.message.reply_text(
+                f"⚠️ Backend degraded: <code>{r.status_code}</code>",
+                parse_mode=ParseMode.HTML,
+            )
     except Exception as e:
-        await update.message.reply_text(f"❌ Backend unreachable: <code>{e}</code>", parse_mode=ParseMode.HTML)
+        await update.message.reply_text(
+            f"❌ Backend unreachable: <code>{e}</code>", parse_mode=ParseMode.HTML
+        )
 
 
 def _bot_api(method: str, payload: dict) -> None:
@@ -803,7 +1023,9 @@ def _bot_api(method: str, payload: dict) -> None:
     if not token:
         return
     try:
-        requests.post(f"https://api.telegram.org/bot{token}/{method}", json=payload, timeout=5)
+        requests.post(
+            f"https://api.telegram.org/bot{token}/{method}", json=payload, timeout=5
+        )
     except Exception:
         pass
 
@@ -857,12 +1079,15 @@ def _refresh_commands_menu_for_all_admins() -> None:
     finally:
         db.close()
 
+
 async def cmd_sites(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     db = SessionLocal()
     try:
         rows = db.query(Site).all()
         if not rows:
-            await update.message.reply_text("ℹ️ <i>Chưa có site nào.</i>", parse_mode=ParseMode.HTML)
+            await update.message.reply_text(
+                "ℹ️ <i>Chưa có site nào.</i>", parse_mode=ParseMode.HTML
+            )
             return
         lines = [f"<b>#{s.id}</b> • {s.name}\n↳ <code>{s.wp_url}</code>" for s in rows]
         await update.message.reply_text("\n".join(lines), parse_mode=ParseMode.HTML)
@@ -927,8 +1152,12 @@ async def cmd_reload_admins(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     _ENV_ADMIN_IDS = _load_env_admin_ids()
     _OWNER_ID = _load_owner_id()
     owner_str = str(_OWNER_ID) if _OWNER_ID is not None else "(none)"
-    env_ids = ",".join(str(i) for i in sorted(_ENV_ADMIN_IDS)) if _ENV_ADMIN_IDS else "(none)"
+    env_ids = (
+        ",".join(str(i) for i in sorted(_ENV_ADMIN_IDS)) if _ENV_ADMIN_IDS else "(none)"
+    )
     await update.message.reply_text(f"Reloaded. OWNER_ID={owner_str}; ENV={env_ids}")
+
+
 async def cmd_admins(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not await _ensure_admin(update):
         return
@@ -937,7 +1166,11 @@ async def cmd_admins(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         rows = db.query(TelegramAdmin).all()
         ids = [str(r.user_id) for r in rows]
         owner_str = str(_OWNER_ID) if _OWNER_ID is not None else "(chưa đặt)"
-        env_ids = ",".join(str(i) for i in sorted(_ENV_ADMIN_IDS)) if _ENV_ADMIN_IDS else "(không)"
+        env_ids = (
+            ",".join(str(i) for i in sorted(_ENV_ADMIN_IDS))
+            if _ENV_ADMIN_IDS
+            else "(không)"
+        )
         lines = [
             f"👑 Owner: {owner_str}",
             f"🛠 ENV admins: {env_ids}",
@@ -966,7 +1199,9 @@ async def cmd_grant(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
     db = SessionLocal()
     try:
-        exists = db.query(TelegramAdmin).filter(TelegramAdmin.user_id == grant_id).first()
+        exists = (
+            db.query(TelegramAdmin).filter(TelegramAdmin.user_id == grant_id).first()
+        )
         if exists:
             await update.message.reply_text("Người này đã là admin.")
             return
@@ -1017,7 +1252,10 @@ async def cmd_approve(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     try:
         item = db.get(ContentQueue, int(content_id))
         if not item:
-            await update.message.reply_text(f"❌ Không tìm thấy content <code>#{content_id}</code>.", parse_mode=ParseMode.HTML)
+            await update.message.reply_text(
+                f"❌ Không tìm thấy content <code>#{content_id}</code>.",
+                parse_mode=ParseMode.HTML,
+            )
             return
         if item.status in {"approved", "published"}:
             await update.message.reply_text(
@@ -1037,7 +1275,10 @@ async def cmd_approve(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             )
         )
         db.commit()
-        await update.message.reply_text(f"✅ Đã duyệt content <code>#{content_id}</code>.", parse_mode=ParseMode.HTML)
+        await update.message.reply_text(
+            f"✅ Đã duyệt content <code>#{content_id}</code>.",
+            parse_mode=ParseMode.HTML,
+        )
     finally:
         db.close()
 
@@ -1055,7 +1296,10 @@ async def cmd_reject(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     try:
         item = db.get(ContentQueue, int(content_id))
         if not item:
-            await update.message.reply_text(f"❌ Không tìm thấy content <code>#{content_id}</code>.", parse_mode=ParseMode.HTML)
+            await update.message.reply_text(
+                f"❌ Không tìm thấy content <code>#{content_id}</code>.",
+                parse_mode=ParseMode.HTML,
+            )
             return
         if item.status == "published":
             await update.message.reply_text(
@@ -1119,19 +1363,17 @@ def build_app() -> Application:
 
 def main() -> None:
     app = build_app()
+
     # Ensure bot is in polling mode (remove webhook if previously set)
     async def _prepare():
         try:
             await app.bot.delete_webhook(drop_pending_updates=False)
         except Exception:
             pass
+
     asyncio.get_event_loop().run_until_complete(_prepare())
     app.run_polling(close_loop=False)
 
 
 if __name__ == "__main__":
     main()
-
-
-
-
