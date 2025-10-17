@@ -36,24 +36,6 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
-async def cmd_clear(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Xóa tin nhắn trong chat"""
-    chat_id = update.effective_chat.id
-
-    # Gửi tin nhắn xác nhận
-    await update.message.reply_text(
-        "🧹 <b>Đang xóa tin nhắn...</b>\n\n💡 <i>Chat đã được làm sạch</i>",
-        parse_mode="HTML",
-    )
-
-    # Xóa tin nhắn vừa gửi sau 2 giây
-    try:
-        await context.bot.delete_message(chat_id, update.message.message_id)
-        await context.bot.delete_message(chat_id, update.message.message_id + 1)
-    except Exception:
-        pass  # Ignore errors if messages can't be deleted
-
-
 async def cmd_unknown(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Xử lý tất cả lệnh không xác định"""
     await update.message.reply_text(
@@ -70,7 +52,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     await update.message.reply_text(
         "📱 <b>Autoseo Bot</b>\n\n"
         "Gõ <b>/start</b> để xem thông tin\n"
-        "Gõ <b>/clear</b> để xóa tin nhắn\n"
         "📊 <b>Dashboard:</b> <code>http://40.82.144.18</code>",
         parse_mode="HTML",
     )
@@ -84,9 +65,8 @@ def build_app() -> Application:
     
     app = Application.builder().token(token).build()
     
-    # Chỉ có 2 lệnh cơ bản - không hiển thị menu
+    # Chỉ có 1 lệnh cơ bản - không hiển thị menu
     app.add_handler(CommandHandler("start", cmd_start))
-    app.add_handler(CommandHandler("clear", cmd_clear))
 
     # Xử lý tất cả lệnh khác
     app.add_handler(MessageHandler(filters.COMMAND, cmd_unknown))
