@@ -114,7 +114,7 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "📖 <b>Danh sách lệnh</b>",
         "",
         "🔎 <b>Nội dung & duyệt</b>",
-        "• <b>/queue</b> <code>&lt;site_id&gt; [n] [status]</code> – xem hàng đợi (mặc định pending, n=10)",
+        "• <b>/queue</b> <code>&lt;site_id&gt; [n|status] [status]</code> – xem hàng đợi (mặc định pending, n=10)",
         "• <b>/approve</b> <code>&lt;id&gt;</code> – duyệt nội dung",
         "• <b>/reject</b> <code>&lt;id&gt; [lý_do]</code> – từ chối",
         "• <b>/publish</b> <code>&lt;id&gt;</code> – publish ngay",
@@ -189,17 +189,38 @@ async def cmd_queue(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
     args = context.args if context.args else []
     if len(args) < 1:
-        await update.message.reply_text("Cách dùng: /queue <site_id> [n=10] [status]")
+        await update.message.reply_text("Cách dùng: /queue <site_id> [n|status] [status]\nVí dụ: /queue 1, /queue 1 pending, /queue 1 10, /queue 1 10 approved")
         return
     try:
         site_id = int(args[0])
-        limit = int(args[1]) if len(args) > 1 else 10
-        limit = max(1, min(limit, 50))
-        status = (args[2].lower() if len(args) > 2 else "pending").strip()
-        if status not in {"pending", "approved", "rejected"}:
+        
+        # Logic mới: hỗ trợ cả /queue 1 pending và /queue 1 10 pending
+        if len(args) == 2:
+            # Có 2 tham số: /queue 1 <status> hoặc /queue 1 <n>
+            second_arg = args[1].lower().strip()
+            if second_arg in {"pending", "approved", "rejected"}:
+                # /queue 1 pending -> n=10, status=pending
+                limit = 10
+                status = second_arg
+            else:
+                # /queue 1 10 -> n=10, status=pending
+                limit = int(second_arg)
+                limit = max(1, min(limit, 50))
+                status = "pending"
+        elif len(args) == 3:
+            # Có 3 tham số: /queue 1 10 pending
+            limit = int(args[1])
+            limit = max(1, min(limit, 50))
+            status = args[2].lower().strip()
+            if status not in {"pending", "approved", "rejected"}:
+                status = "pending"
+        else:
+            # Chỉ có 1 tham số: /queue 1 -> n=10, status=pending
+            limit = 10
             status = "pending"
+            
     except ValueError:
-        await update.message.reply_text("Tham số không hợp lệ. Ví dụ: /queue 1 10")
+        await update.message.reply_text("Tham số không hợp lệ. Ví dụ: /queue 1, /queue 1 pending, /queue 1 10, /queue 1 10 pending")
         return
 
     # Fallback logic: nếu không có bài pending, thử approved
