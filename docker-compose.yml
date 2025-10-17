@@ -14,11 +14,13 @@ services:
             retries: 5
         volumes:
             - pgdata:/var/lib/postgresql/data
+        restart: unless-stopped
 
     redis:
         image: redis:7-alpine
         ports:
             - '6379:6379'
+        restart: unless-stopped
 
     backend:
         build:
@@ -51,6 +53,7 @@ services:
         depends_on:
             - backend
             - redis
+        restart: unless-stopped
 
     beat:
         build:
@@ -62,6 +65,7 @@ services:
             CELERY_RESULT_BACKEND: redis://redis:6379/1
         depends_on:
             - worker
+        restart: unless-stopped
 
     bot:
         build:
@@ -77,6 +81,7 @@ services:
         depends_on:
             backend:
                 condition: service_started
+        restart: unless-stopped
 
     dashboard:
         build:
