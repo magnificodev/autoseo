@@ -189,11 +189,13 @@ async def cmd_queue(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
     args = context.args if context.args else []
     if len(args) < 1:
-        await update.message.reply_text("Cách dùng: /queue <site_id> [n|status] [status]\nVí dụ: /queue 1, /queue 1 pending, /queue 1 10, /queue 1 10 approved")
+        await update.message.reply_text(
+            "Cách dùng: /queue <site_id> [n|status] [status]\nVí dụ: /queue 1, /queue 1 pending, /queue 1 10, /queue 1 10 approved"
+        )
         return
     try:
         site_id = int(args[0])
-        
+
         # Logic mới: hỗ trợ cả /queue 1 pending và /queue 1 10 pending
         if len(args) == 2:
             # Có 2 tham số: /queue 1 <status> hoặc /queue 1 <n>
@@ -218,13 +220,15 @@ async def cmd_queue(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             # Chỉ có 1 tham số: /queue 1 -> n=10, status=pending
             limit = 10
             status = "pending"
-            
+
     except ValueError:
-        await update.message.reply_text("Tham số không hợp lệ. Ví dụ: /queue 1, /queue 1 pending, /queue 1 10, /queue 1 10 pending")
+        await update.message.reply_text(
+            "Tham số không hợp lệ. Ví dụ: /queue 1, /queue 1 pending, /queue 1 10, /queue 1 10 pending"
+        )
         return
 
-    # Fallback logic: nếu không có bài pending, thử approved
-    if status == "pending":
+    # Fallback logic chỉ cho trường hợp mặc định (không chỉ định status)
+    if len(args) == 1:  # Chỉ có /queue 1
         available_statuses = _get_available_statuses(site_id)
         if "pending" not in available_statuses and available_statuses:
             status = available_statuses[0]  # Lấy trạng thái đầu tiên có dữ liệu
@@ -547,7 +551,8 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
                     [
                         [
                             InlineKeyboardButton(
-                                "⬅️ Back", callback_data=f"page:{site_ctx}:{offset_ctx}:{limit_ctx}:pending"
+                                "⬅️ Back",
+                                callback_data=f"page:{site_ctx}:{offset_ctx}:{limit_ctx}:pending",
                             )
                         ]
                     ]
@@ -577,7 +582,8 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
                     [
                         [
                             InlineKeyboardButton(
-                                "⬅️ Back", callback_data=f"page:{site_ctx}:{offset_ctx}:{limit_ctx}:{status_ctx}"
+                                "⬅️ Back",
+                                callback_data=f"page:{site_ctx}:{offset_ctx}:{limit_ctx}:{status_ctx}",
                             )
                         ]
                     ]
@@ -641,7 +647,8 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
                     [
                         [
                             InlineKeyboardButton(
-                                "⬅️ Back", callback_data=f"page:{site_ctx}:{offset_ctx}:{limit_ctx}:pending"
+                                "⬅️ Back",
+                                callback_data=f"page:{site_ctx}:{offset_ctx}:{limit_ctx}:pending",
                             )
                         ]
                     ]
@@ -682,7 +689,8 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
                     [
                         [
                             InlineKeyboardButton(
-                                "⬅️ Back", callback_data=f"page:{site_ctx}:{offset_ctx}:{limit_ctx}:approved"
+                                "⬅️ Back",
+                                callback_data=f"page:{site_ctx}:{offset_ctx}:{limit_ctx}:approved",
                             )
                         ]
                     ]
@@ -701,7 +709,8 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
                     [
                         [
                             InlineKeyboardButton(
-                                "⬅️ Back", callback_data=f"page:{site_ctx}:{offset_ctx}:{limit_ctx}:{status_ctx}"
+                                "⬅️ Back",
+                                callback_data=f"page:{site_ctx}:{offset_ctx}:{limit_ctx}:{status_ctx}",
                             )
                         ]
                     ]
@@ -776,7 +785,8 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
                         [
                             [
                                 InlineKeyboardButton(
-                                    "⬅️ Back", callback_data=f"page:{site_id}:{offset}:{limit}:pending"
+                                    "⬅️ Back",
+                                    callback_data=f"page:{site_id}:{offset}:{limit}:pending",
                                 )
                             ]
                         ]
@@ -806,7 +816,8 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
                             callback_data=f"bulk_reject:{site_id}:{offset}:{limit}:{count}:noreason",
                         ),
                         InlineKeyboardButton(
-                            text="Cancel", callback_data=f"page:{site_id}:{offset}:{limit}:pending"
+                            text="Cancel",
+                            callback_data=f"page:{site_id}:{offset}:{limit}:pending",
                         ),
                     ],
                 ]
@@ -845,7 +856,8 @@ async def on_action_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -
                     [
                         [
                             InlineKeyboardButton(
-                                "⬅️ Back", callback_data=f"page:{site_id}:{offset}:{limit}:pending"
+                                "⬅️ Back",
+                                callback_data=f"page:{site_id}:{offset}:{limit}:pending",
                             )
                         ]
                     ]
