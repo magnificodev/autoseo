@@ -140,9 +140,9 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 h-4 w-4 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-3 h-4 w-4 text-gray-400 hover:text-gray-600 flex items-center justify-center"
                 >
-                  {showPassword ? <EyeOff /> : <Eye />}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
@@ -165,9 +165,9 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-3 h-4 w-4 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-3 h-4 w-4 text-gray-400 hover:text-gray-600 flex items-center justify-center"
                 >
-                  {showConfirmPassword ? <EyeOff /> : <Eye />}
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
