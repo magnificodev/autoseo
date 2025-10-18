@@ -151,9 +151,9 @@ jobs:
                       # Clean up old containers only (keep images for cache)
                       docker compose down || true
                       
-                      # Build and start containers with cache
+                      # Build and start containers with no cache to fix case sensitivity
                       docker compose pull || true
-                      docker compose build --pull
+                      docker compose build --pull --no-cache
                       docker compose up -d
                       # Ensure bot restarted with new token
                       docker compose up -d bot

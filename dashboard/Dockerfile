@@ -34,6 +34,11 @@ RUN echo "=== DEBUG: Check if we can access components/ui after mkdir ==="
 RUN ls -la components/ui/ 2>/dev/null || echo "Still cannot list components/ui/"
 RUN echo "=== DEBUG: Check if we can find any .tsx files ==="
 RUN find . -name "*.tsx" -type f | head -10
+RUN echo "=== DEBUG: Check specific UI component files ==="
+RUN ls -la components/ui/ | grep -E "(badge|button|table|input|skeleton)\.tsx"
+RUN echo "=== DEBUG: Test module resolution ==="
+RUN node -e "try { console.log('badge:', require.resolve('./components/ui/badge')); } catch(e) { console.log('badge not found:', e.message); }"
+RUN echo "=== DEBUG: Force clear any cache and build ==="
 RUN npm run build
 
 FROM node:20-alpine AS runner
