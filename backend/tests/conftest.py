@@ -14,8 +14,8 @@ os.environ.setdefault("BACKEND_CORS_ORIGINS", "http://localhost:3000")
 os.environ.setdefault("JWT_SECRET", "test-secret")
 
 from src.api.main import app  # noqa: E402
-from src.database.session import SessionLocal, engine  # noqa: E402
 from src.database.models import Base  # noqa: E402
+from src.database.session import SessionLocal, engine  # noqa: E402
 
 
 @pytest.fixture(scope="session")

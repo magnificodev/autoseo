@@ -1,9 +1,9 @@
 def test_register_and_login_and_content_flow(client, sqlite_db):
     # register
     r = client.post(
-        "/api/auth/register", 
+        "/api/auth/register",
         data={"email": "t1@example.com", "password": "123456"},
-        headers={"Content-Type": "application/x-www-form-urlencoded"}
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
     )
     assert r.status_code == 200
 
@@ -17,8 +17,9 @@ def test_register_and_login_and_content_flow(client, sqlite_db):
     token = r.json()["access_token"]
 
     # Upgrade user to manager role (bypass permission check for test)
+    from src.database.models import Role, User
     from src.database.session import SessionLocal
-    from src.database.models import User, Role
+
     db = SessionLocal()
     try:
         user = db.query(User).filter(User.email == "t1@example.com").first()

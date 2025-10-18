@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card } from '../../../components/ui/Card';
-import { Button } from '../../../components/ui/Button';
-import { Badge } from '../../../components/ui/Badge';
-import { Textarea } from '../../../components/ui/Textarea';
+import { Card } from '../../../components/ui/card';
+import { Button } from '../../../components/ui/button';
+import { Badge } from '../../../components/ui/badge';
+import { Textarea } from '../../../components/ui/textarea';
 import {
     Table,
     TableBody,
@@ -12,7 +12,7 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from '../../../components/ui/Table';
+} from '../../../components/ui/table';
 
 interface RoleApplication {
     id: number;
