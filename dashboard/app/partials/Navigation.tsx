@@ -71,7 +71,7 @@ export default function Navigation() {
   ];
 
   return (
-    <nav className="space-y-1">
+    <nav className="space-y-2">
       {navItems.map((item) => {
         if (!item.show) return null;
         
@@ -83,15 +83,25 @@ export default function Navigation() {
             key={item.href}
             href={item.href}
             className={cn(
-              "flex items-center space-x-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
-              "hover:bg-accent hover:text-accent-foreground",
+              "group flex items-center space-x-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200",
+              "hover:bg-accent/50 hover:text-accent-foreground hover:shadow-sm",
               isActive 
-                ? "bg-primary text-primary-foreground shadow-sm" 
+                ? "bg-primary text-primary-foreground shadow-md border border-primary/20" 
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <Icon className="h-4 w-4" />
-            <span>{item.label}</span>
+            <div className={cn(
+              "p-1.5 rounded-lg transition-all duration-200",
+              isActive 
+                ? "bg-primary-foreground/20" 
+                : "group-hover:bg-accent/50"
+            )}>
+              <Icon className="h-4 w-4" />
+            </div>
+            <span className="flex-1">{item.label}</span>
+            {isActive && (
+              <div className="h-1.5 w-1.5 rounded-full bg-primary-foreground" />
+            )}
           </Link>
         );
       })}

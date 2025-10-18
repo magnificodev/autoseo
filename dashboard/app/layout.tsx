@@ -18,13 +18,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         {/* Sidebar */}
                         <aside className="hidden w-64 border-r bg-card/50 backdrop-blur-sm md:flex md:flex-col">
                             <div className="flex h-16 items-center border-b px-6">
-                                <div className="flex items-center space-x-2">
-                                    <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                                        <span className="text-primary-foreground font-bold text-sm">
+                                <div className="flex items-center space-x-3">
+                                    <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-lg">
+                                        <span className="text-white font-bold text-sm">
                                             A
                                         </span>
                                     </div>
-                                    <span className="text-xl font-bold text-foreground">Autoseo</span>
+                                    <div>
+                                        <span className="text-xl font-bold text-foreground">Autoseo</span>
+                                        <p className="text-xs text-muted-foreground">SEO Automation</p>
+                                    </div>
                                 </div>
                             </div>
                             <div className="flex-1 overflow-y-auto p-4">
@@ -56,8 +59,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                             </header>
 
                             {/* Main Content Area */}
-                            <main className="flex-1 overflow-y-auto bg-muted/20">
-                                <div className="container mx-auto p-6">{children}</div>
+                            <main className="flex-1 overflow-y-auto bg-gradient-to-br from-background to-muted/20">
+                                <div className="container mx-auto p-6 max-w-7xl">{children}</div>
                             </main>
                         </div>
                     </div>
