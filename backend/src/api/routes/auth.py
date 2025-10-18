@@ -115,7 +115,38 @@ class CreateAdminRequest(BaseModel):
     password: str
 
 
-@router.post("/init-roles")
+@router.get("/check-db")
+def check_database(db: Session = Depends(get_db)):
+    """Check database schema and tables"""
+    try:
+        # Check if tables exist
+        from sqlalchemy import inspect
+        inspector = inspect(db.bind)
+        tables = inspector.get_table_names()
+        
+        # Check if users table exists and has data
+        users_count = 0
+        roles_count = 0
+        try:
+            users_count = db.query(User).count()
+        except Exception as e:
+            users_count = f"Error: {str(e)}"
+        
+        try:
+            roles_count = db.query(Role).count()
+        except Exception as e:
+            roles_count = f"Error: {str(e)}"
+        
+        return {
+            "tables": tables,
+            "users_count": users_count,
+            "roles_count": roles_count,
+            "database_url": str(db.bind.url).replace(db.bind.url.password or "", "***") if db.bind.url.password else str(db.bind.url)
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
 def init_roles(db: Session = Depends(get_db)):
     """Initialize default roles if they don't exist"""
     # Check if any roles exist
