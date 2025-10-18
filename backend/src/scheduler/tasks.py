@@ -16,7 +16,7 @@ from .utils import count_today_generated, is_within_active_hours
 def generate_draft_for_site(site_id: int) -> int:
     db = SessionLocal()
     try:
-        site = db.query(Site).get(site_id)
+        site = db.get(Site, site_id)
         if not site:
             return 0
         # Enforce active hours
@@ -30,7 +30,8 @@ def generate_draft_for_site(site_id: int) -> int:
         if site.daily_quota is not None and generated_today >= (site.daily_quota or 0):
             return 0
         title = f"Auto Draft {datetime.utcnow().isoformat()}"
-        row = ContentQueue(site_id=site.id, title=title, body=None, status="pending")
+        body = f"Auto-generated content for site {site.name} at {datetime.utcnow().isoformat()}"
+        row = ContentQueue(site_id=site.id, title=title, body=body, status="pending")
         db.add(row)
         db.commit()
         return row.id

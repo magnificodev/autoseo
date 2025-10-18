@@ -1,7 +1,9 @@
 def test_register_and_login_and_content_flow(client):
     # register
     r = client.post(
-        "/api/auth/register", params={"email": "t1@example.com", "password": "123456"}
+        "/api/auth/register", 
+        data={"email": "t1@example.com", "password": "123456"},
+        headers={"Content-Type": "application/x-www-form-urlencoded"}
     )
     assert r.status_code == 200
 
