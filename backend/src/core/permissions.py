@@ -36,6 +36,9 @@ ROLE_PERMISSIONS = {
     ],
     "viewer": [
         "dashboard.view",
+        "sites.view",
+        "keywords.view", 
+        "content.view",
         "audit_logs.view"
     ]
 }
