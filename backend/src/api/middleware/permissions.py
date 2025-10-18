@@ -6,18 +6,16 @@ from src.database.models import User
 
 def require_permission(permission: str):
     """
-    Decorator to require specific permission
+    Dependency to require specific permission
     """
-    def decorator(func):
-        def wrapper(current_user: User = Depends(get_current_user)):
-            if not check_permission(current_user, permission):
-                raise HTTPException(
-                    status_code=403,
-                    detail="Insufficient permissions"
-                )
-            return func
-        return wrapper
-    return decorator
+    def permission_checker(current_user: User = Depends(get_current_user)):
+        if not check_permission(current_user, permission):
+            raise HTTPException(
+                status_code=403,
+                detail="Insufficient permissions"
+            )
+        return current_user
+    return permission_checker
 
 
 def require_admin(func):

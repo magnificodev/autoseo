@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from src.api.deps.auth import get_current_user, get_db
 from src.api.middleware.permissions import require_permission
 from src.core.wordpress_client import WordPressClient, WordPressCredentials
-from src.database.models import Site
+from src.database.models import Site, User
 
 
 class SiteIn(BaseModel):
@@ -34,8 +34,7 @@ router = APIRouter(prefix="/api/sites", tags=["sites"])
 
 
 @router.get("/", response_model=list[SiteOut])
-@require_permission("sites.view")
-def list_sites(db: Session = Depends(get_db), user=Depends(get_current_user)):
+def list_sites(db: Session = Depends(get_db), user: User = Depends(require_permission("sites.view"))):
     records = db.query(Site).all()
     return [
         SiteOut.model_validate(
@@ -56,9 +55,10 @@ def list_sites(db: Session = Depends(get_db), user=Depends(get_current_user)):
 
 
 @router.post("/", response_model=SiteIn)
-@require_permission("sites.create")
 def create_site(
-    body: SiteIn, db: Session = Depends(get_db), user=Depends(get_current_user)
+    body: SiteIn, 
+    db: Session = Depends(get_db), 
+    user: User = Depends(require_permission("sites.create"))
 ):
     site = Site(**body.model_dump())
     db.add(site)
@@ -68,11 +68,10 @@ def create_site(
 
 
 @router.get("/{site_id}", response_model=SiteOut)
-@require_permission("sites.view")
 def get_site(
     site_id: int,
     db: Session = Depends(get_db),
-    user=Depends(get_current_user),
+    user: User = Depends(require_permission("sites.view")),
 ):
     site = db.get(Site, site_id)
     if not site:
@@ -96,12 +95,11 @@ def get_site(
 
 
 @router.put("/{site_id}", response_model=SiteOut)
-@require_permission("sites.update")
 def update_site_full(
     site_id: int,
     body: SiteIn,
     db: Session = Depends(get_db),
-    user=Depends(get_current_user),
+    user: User = Depends(require_permission("sites.update")),
 ):
     site = db.get(Site, site_id)
     if not site:
@@ -135,12 +133,11 @@ def update_site_full(
 
 
 @router.patch("/{site_id}", response_model=SiteOut)
-@require_permission("sites.update")
 def update_site(
     site_id: int,
     body: SiteUpdate,
     db: Session = Depends(get_db),
-    user=Depends(get_current_user),
+    user: User = Depends(require_permission("sites.update")),
 ):
     site = db.get(Site, site_id)
     if not site:
@@ -179,11 +176,10 @@ def update_site(
 
 
 @router.delete("/{site_id}")
-@require_permission("sites.delete")
 def delete_site(
     site_id: int,
     db: Session = Depends(get_db),
-    user=Depends(get_current_user),
+    user: User = Depends(require_permission("sites.delete")),
 ):
     site = db.get(Site, site_id)
     if not site:
@@ -201,9 +197,8 @@ class TestConnectionOut(BaseModel):
 
 
 @router.post("/{site_id}/test-connection", response_model=TestConnectionOut)
-@require_permission("sites.view")
 def test_site_connection(
-    site_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)
+    site_id: int, db: Session = Depends(get_db), user: User = Depends(require_permission("sites.view"))
 ):
     site = db.get(Site, site_id)
     if not site:
