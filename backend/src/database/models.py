@@ -32,7 +32,8 @@ class User(Base):
     
     # Relationships
     role: Mapped["Role"] = relationship("Role", back_populates="users")
-    role_applications: Mapped[List["RoleApplication"]] = relationship("RoleApplication", back_populates="user")
+    role_applications: Mapped[List["RoleApplication"]] = relationship("RoleApplication", back_populates="user", foreign_keys="RoleApplication.user_id")
+    reviewed_applications: Mapped[List["RoleApplication"]] = relationship("RoleApplication", foreign_keys="RoleApplication.reviewed_by")
 
 
 class RoleApplication(Base):
@@ -50,7 +51,7 @@ class RoleApplication(Base):
     
     # Relationships
     user: Mapped["User"] = relationship("User", back_populates="role_applications", foreign_keys=[user_id])
-    reviewer: Mapped["User"] = relationship("User", foreign_keys=[reviewed_by])
+    reviewer: Mapped["User"] = relationship("User", foreign_keys=[reviewed_by], overlaps="reviewed_applications")
 
 
 class Site(Base):
