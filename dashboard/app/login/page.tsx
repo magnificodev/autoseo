@@ -2,8 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('admin@autoseo.com');
