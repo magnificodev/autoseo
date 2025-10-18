@@ -28,6 +28,10 @@ RUN echo "=== DEBUG: Check if components/ui directory exists ==="
 RUN test -d components/ui && echo "components/ui directory exists" || echo "components/ui directory NOT FOUND"
 RUN echo "=== DEBUG: List all files in components/ui ==="
 RUN ls -la components/ui/ 2>/dev/null || echo "Cannot list components/ui/"
+RUN echo "=== DEBUG: Try to create components directory if missing ==="
+RUN mkdir -p components/ui || echo "Cannot create components/ui"
+RUN echo "=== DEBUG: Check if we can access components/ui after mkdir ==="
+RUN ls -la components/ui/ 2>/dev/null || echo "Still cannot list components/ui/"
 RUN npm run build
 
 FROM node:20-alpine AS runner
@@ -44,5 +48,3 @@ EXPOSE 3000
 ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 CMD ["node", "server.js"]
-
-
