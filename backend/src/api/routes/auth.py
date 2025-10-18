@@ -115,7 +115,29 @@ class CreateAdminRequest(BaseModel):
     password: str
 
 
-@router.post("/create-admin")
+@router.post("/init-roles")
+def init_roles(db: Session = Depends(get_db)):
+    """Initialize default roles if they don't exist"""
+    # Check if any roles exist
+    existing_roles = db.query(Role).count()
+    if existing_roles > 0:
+        return {"message": "Roles already exist", "count": existing_roles}
+    
+    # Create default roles
+    roles = [
+        Role(name="admin"),
+        Role(name="editor"),
+        Role(name="viewer")
+    ]
+    
+    for role in roles:
+        db.add(role)
+    
+    db.commit()
+    
+    return {"message": "Default roles created successfully", "roles": [r.name for r in roles]}
+
+
 def create_admin_user(request: CreateAdminRequest, db: Session = Depends(get_db)):
     """Create the first admin user if no users exist"""
     # Check if any users exist
