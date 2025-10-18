@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from src.api.deps.auth import get_current_user
 from src.database.models import Base, User, Role
 from src.database.session import SessionLocal, engine
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -109,7 +110,45 @@ def login(
     return {"access_token": token, "token_type": "bearer"}
 
 
-@router.post("/login-cookie")
+class CreateAdminRequest(BaseModel):
+    email: str
+    password: str
+
+
+@router.post("/create-admin")
+def create_admin_user(request: CreateAdminRequest, db: Session = Depends(get_db)):
+    """Create the first admin user if no users exist"""
+    # Check if any users exist
+    existing_users = db.query(User).count()
+    if existing_users > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Admin user already exists"
+        )
+    
+    # Create admin role if it doesn't exist
+    admin_role = db.query(Role).filter(Role.name == "admin").first()
+    if not admin_role:
+        admin_role = Role(name="admin", description="Administrator")
+        db.add(admin_role)
+        db.commit()
+        db.refresh(admin_role)
+    
+    # Create admin user
+    password_hash = pwd_context.hash(request.password)
+    admin_user = User(
+        email=request.email,
+        password_hash=password_hash,
+        role_id=admin_role.id,
+        is_active=True
+    )
+    db.add(admin_user)
+    db.commit()
+    db.refresh(admin_user)
+    
+    return {"message": "Admin user created successfully", "user_id": admin_user.id}
+
+
 def login_cookie(
     form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
 ):
