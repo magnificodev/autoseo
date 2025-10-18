@@ -23,9 +23,9 @@ class AdminCreateIn(BaseModel):
 
 
 def _ensure_dashboard_admin(user: User) -> None:
-    # Simple policy: only the first user (id==1) can manage admins via dashboard/API.
-    # This can be evolved to role-based access later.
-    if user.id != 1:
+    # Simple policy: only admin users can manage admins via dashboard/API.
+    # Allow user ID 3 (admin@autoseo.com) for now
+    if user.id not in [1, 3]:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="forbidden")
 
 
