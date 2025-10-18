@@ -1,39 +1,75 @@
-'use client'
+'use client';
 
-import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Button from '../../components/ui/Button';
+
+type User = {
+    id: number;
+    email: string;
+    name?: string;
+};
 
 export default function ClientAuthLinks() {
-  const [loggedIn, setLoggedIn] = useState<boolean>(false)
+    const [user, setUser] = useState<User | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const router = useRouter();
 
-  useEffect(() => {
-    try {
-      // Check httpOnly token existence by probing a protected endpoint
-      fetch('/api/sites/', { credentials: 'include' })
-        .then((res) => setLoggedIn(res.status !== 401))
-        .catch(() => setLoggedIn(false))
-    } catch {
-      setLoggedIn(false)
+    useEffect(() => {
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/auth/me', {
+                    credentials: 'include',
+                });
+                
+                if (response.ok) {
+                    const userData = await response.json();
+                    setUser(userData);
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        }
+
+        checkAuth();
+    }, []);
+
+    const handleLogout = async () => {
+        try {
+            await fetch('/api/auth/logout', {
+                method: 'POST',
+                credentials: 'include',
+            });
+            setUser(null);
+            router.push('/login');
+            router.refresh();
+        } catch (error) {
+            console.error('Logout failed:', error);
+        }
+    };
+
+    if (isLoading) {
+        return <div className="text-sm text-gray-600">Đang tải...</div>;
     }
-  }, [])
 
-  async function doLogout() {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
-      window.location.href = '/login'
-    } catch {
-      window.location.href = '/login'
+    if (user) {
+        return (
+            <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">
+                    Xin chào, {user.name || user.email}
+                </span>
+                <Button variant="secondary" size="sm" onClick={handleLogout}>
+                    Đăng xuất
+                </Button>
+            </div>
+        );
     }
-  }
 
-  if (loggedIn) {
     return (
-      <button onClick={doLogout} style={{ float: 'right' }}>Logout</button>
-    )
-  }
-  return (
-    <Link href="/login" style={{ float: 'right' }}>Login</Link>
-  )
+        <Button variant="secondary" size="sm" onClick={() => router.push('/login')}>
+            Đăng nhập
+        </Button>
+    );
 }
-
-
