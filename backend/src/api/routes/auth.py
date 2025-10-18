@@ -169,6 +169,36 @@ def init_roles(db: Session = Depends(get_db)):
     return {"message": "Default roles created successfully", "roles": [r.name for r in roles]}
 
 
+@router.get("/list-roles")
+def list_roles(db: Session = Depends(get_db)):
+    """List all roles and their IDs"""
+    roles = db.query(Role).all()
+    return [{"id": role.id, "name": role.name} for role in roles]
+
+
+class UpdateUserRoleRequest(BaseModel):
+    email: str
+    role_name: str
+
+
+@router.post("/update-user-role")
+def update_user_role(request: UpdateUserRoleRequest, db: Session = Depends(get_db)):
+    """Update a user's role"""
+    user = db.query(User).filter(User.email == request.email).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    role = db.query(Role).filter(Role.name == request.role_name).first()
+    if not role:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
+
+    user.role_id = role.id
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return {"message": f"User {user.email} role updated to {role.name}"}
+
+
 @router.post("/create-admin")
 def create_admin_user(request: CreateAdminRequest, db: Session = Depends(get_db)):
     """Create the first admin user if no users exist"""
