@@ -149,6 +149,7 @@ def create_admin_user(request: CreateAdminRequest, db: Session = Depends(get_db)
     return {"message": "Admin user created successfully", "user_id": admin_user.id}
 
 
+@router.post("/login-cookie")
 def login_cookie(
     form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
 ):
