@@ -2,17 +2,17 @@
 
 import React from 'react';
 import useSWR from 'swr';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Badge } from '../../components/ui/badge';
+import { Button } from '../../components/ui/button';
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
+} from '../../components/ui/dialog';
+import { Input } from '../../components/ui/input';
+import { Skeleton } from '../../components/ui/skeleton';
 import {
     Table,
     TableBody,
@@ -20,7 +20,7 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from '@/components/ui/table';
+} from '../../components/ui/table';
 
 type Keyword = {
     id: number;
