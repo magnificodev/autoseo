@@ -9,7 +9,7 @@ from src.api.deps.auth import get_current_user, get_db
 from src.database.models import AuditLog, User
 
 
-router = APIRouter(prefix="/audit-logs", tags=["audit-logs"])
+router = APIRouter(prefix="/api/audit-logs", tags=["audit-logs"])
 
 
 class AuditLogOut(BaseModel):

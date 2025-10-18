@@ -8,7 +8,7 @@ from src.api.deps.auth import get_current_user, get_db
 from src.database.models import TelegramAdmin, User
 
 
-router = APIRouter(prefix="/admins", tags=["admins"])
+router = APIRouter(prefix="/api/admins", tags=["admins"])
 
 
 class AdminOut(BaseModel):
