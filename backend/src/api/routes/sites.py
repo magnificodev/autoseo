@@ -29,7 +29,7 @@ class SiteUpdate(BaseModel):
     active_end_hour: int | None = None
 
 
-router = APIRouter(prefix="/sites", tags=["sites"])
+router = APIRouter(prefix="/api/sites", tags=["sites"])
 
 
 @router.get("/", response_model=list[SiteOut])

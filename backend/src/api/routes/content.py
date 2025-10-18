@@ -15,26 +15,54 @@ class ContentIn(BaseModel):
     status: str = "pending"
 
 
-router = APIRouter(prefix="/content", tags=["content"])
+router = APIRouter(prefix="/api/content-queue", tags=["content"])
 
 
-@router.get("/", response_model=list[ContentIn])
-def list_content(db: Session = Depends(get_db), user=Depends(get_current_user)):
-    rows = db.query(ContentQueue).all()
+class ContentOut(BaseModel):
+    id: int
+    title: str
+    content: str
+    status: str
+    site_id: int
+    site_name: str
+    created_at: str
+    updated_at: str
+
+
+@router.get("/", response_model=list[ContentOut])
+def list_content(
+    db: Session = Depends(get_db), 
+    user=Depends(get_current_user),
+    limit: int = 10,
+    page: int = 1,
+    q: Optional[str] = None,
+    status: Optional[str] = None
+):
+    query = db.query(ContentQueue).join(Site)
+    
+    if q:
+        query = query.filter(ContentQueue.title.contains(q))
+    if status:
+        query = query.filter(ContentQueue.status == status)
+    
+    offset = (page - 1) * limit
+    rows = query.offset(offset).limit(limit).all()
+    
     return [
-        ContentIn.model_validate(
-            {
-                "site_id": r.site_id,
-                "title": r.title,
-                "body": r.body,
-                "status": r.status,
-            }
-        )
-        for r in rows
+        ContentOut(
+            id=r.id,
+            title=r.title,
+            content=r.body or "",
+            status=r.status,
+            site_id=r.site_id,
+            site_name=r.site.name,
+            created_at=r.created_at.isoformat() if r.created_at else "",
+            updated_at=r.updated_at.isoformat() if r.updated_at else r.created_at.isoformat() if r.created_at else ""
+        ) for r in rows
     ]
 
 
-@router.post("/", response_model=ContentIn)
+@router.post("/", response_model=ContentOut)
 def create_content(
     body: ContentIn = Body(...),
     db: Session = Depends(get_db),
@@ -45,10 +73,38 @@ def create_content(
         db.add(row)
         db.commit()
         db.refresh(row)
-        return body
+        
+        return ContentOut(
+            id=row.id,
+            title=row.title,
+            content=row.body or "",
+            status=row.status,
+            site_id=row.site_id,
+            site_name=row.site.name,
+            created_at=row.created_at.isoformat() if row.created_at else "",
+            updated_at=row.updated_at.isoformat() if row.updated_at else row.created_at.isoformat() if row.created_at else ""
+        )
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail=f"content_create_failed: {e}")
+
+
+@router.patch("/{content_id}/status")
+def update_content_status(
+    content_id: int,
+    status: str = Body(..., embed=True),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user)
+):
+    content = db.get(ContentQueue, content_id)
+    if not content:
+        raise HTTPException(status_code=404, detail="Content not found")
+    
+    content.status = status
+    db.add(content)
+    db.commit()
+    
+    return {"message": "Status updated successfully"}
 
 
 class PublishIn(BaseModel):
