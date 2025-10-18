@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import Button from '../../components/ui/Button';
 
 type User = {
@@ -21,13 +21,17 @@ export default function ClientAuthLinks() {
                 const response = await fetch('/api/auth/me', {
                     credentials: 'include',
                 });
-                
+
                 if (response.ok) {
                     const userData = await response.json();
                     setUser(userData);
+                } else {
+                    // Not authenticated, this is normal
+                    setUser(null);
                 }
             } catch (error) {
                 console.error('Auth check failed:', error);
+                setUser(null);
             } finally {
                 setIsLoading(false);
             }
@@ -57,9 +61,7 @@ export default function ClientAuthLinks() {
     if (user) {
         return (
             <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">
-                    Xin chào, {user.name || user.email}
-                </span>
+                <span className="text-sm text-gray-600">Xin chào, {user.name || user.email}</span>
                 <Button variant="secondary" size="sm" onClick={handleLogout}>
                     Đăng xuất
                 </Button>
