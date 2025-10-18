@@ -17,6 +17,14 @@ jobs:
               with:
                   python-version: '3.11'
 
+            - name: Cache Python dependencies
+              uses: actions/cache@v4
+              with:
+                  path: ~/.cache/pip
+                  key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+                  restore-keys: |
+                      ${{ runner.os }}-pip-
+
             - name: Install backend test deps
               working-directory: backend
               run: |
@@ -140,14 +148,12 @@ jobs:
                         echo "Note: TELEGRAM_ADMINS not set; admin whitelist disabled"
                       fi
 
-                      # Clean up old containers and images
+                      # Clean up old containers only (keep images for cache)
                       docker compose down || true
-                      docker system prune -f || true
-                      docker builder prune -f || true
                       
-                      # Build and start containers
+                      # Build and start containers with cache
                       docker compose pull || true
-                      docker compose build --no-cache --pull
+                      docker compose build --pull
                       docker compose up -d
                       # Ensure bot restarted with new token
                       docker compose up -d bot
