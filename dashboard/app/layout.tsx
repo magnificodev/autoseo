@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import '../styles/modern-dashboard.css';
 import ClientAuthLinks from './partials/ClientAuthLinks';
 import Navigation from './partials/Navigation';
 import Providers from './providers';
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
-        <html lang="en" className="h-full">
+        <html lang="en" className="h-full" data-theme="dark">
             <body className="h-full bg-background text-foreground font-sans antialiased">
                 <Providers>
                     <div className="flex h-screen overflow-hidden">
