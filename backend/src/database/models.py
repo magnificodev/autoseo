@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import List
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -16,7 +17,7 @@ class Role(Base):
     created_at: datetime = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
-    users: list = relationship("User", back_populates="role")
+    users: List["User"] = relationship("User", back_populates="role")
 
 
 class User(Base):
@@ -30,7 +31,7 @@ class User(Base):
     created_at: datetime = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
-    role: Role = relationship("Role", back_populates="users")
+    role: "Role" = relationship("Role", back_populates="users")
 
 
 class Site(Base):
@@ -58,7 +59,7 @@ class Keyword(Base):
     created_at: datetime = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
-    site: Site = relationship("Site")
+    site: "Site" = relationship("Site")
 
 
 class ContentQueue(Base):
@@ -73,7 +74,7 @@ class ContentQueue(Base):
     updated_at: datetime = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    site: Site = relationship("Site")
+    site: "Site" = relationship("Site")
 
 
 class TelegramAdmin(Base):
