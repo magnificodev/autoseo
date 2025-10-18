@@ -2,7 +2,7 @@ import clsx from 'classnames';
 import * as React from 'react';
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-    variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+    variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline';
     size?: 'sm' | 'md' | 'lg';
 };
 
@@ -17,6 +17,7 @@ const variantClasses: Record<NonNullable<ButtonProps['variant']>, string> = {
     secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200 focus-visible:outline-gray-400',
     ghost: 'bg-transparent text-gray-900 hover:bg-gray-50 focus-visible:outline-gray-300',
     danger: 'bg-red-600 text-white hover:bg-red-700 focus-visible:outline-red-600',
+    outline: 'border border-gray-300 bg-transparent text-gray-900 hover:bg-gray-50 focus-visible:outline-gray-300',
 };
 
 export function Button({
