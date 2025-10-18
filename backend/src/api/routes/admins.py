@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from src.api.deps.auth import get_current_user, get_db
-from src.api.middleware.permissions import require_admin
+from src.api.middleware.permissions import require_admin, require_permission
 from src.database.models import TelegramAdmin, User
 
 
@@ -24,17 +24,15 @@ class AdminCreateIn(BaseModel):
 
 
 @router.get("/", response_model=List[AdminOut])
-@require_admin
-def list_admins(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def list_admins(current_user: User = Depends(require_permission("admins.view")), db: Session = Depends(get_db)):
     rows = db.query(TelegramAdmin).all()
     return [AdminOut(user_id=r.user_id) for r in rows]
 
 
 @router.post("/", response_model=AdminOut, status_code=201)
-@require_admin
 def create_admin(
     body: AdminCreateIn,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission("admins.manage")),
     db: Session = Depends(get_db),
 ):
     exists = db.query(TelegramAdmin).filter(TelegramAdmin.user_id == body.user_id).first()
@@ -47,10 +45,9 @@ def create_admin(
 
 
 @router.delete("/{user_id}", status_code=204)
-@require_admin
 def delete_admin(
     user_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission("admins.manage")),
     db: Session = Depends(get_db),
 ):
     row = db.query(TelegramAdmin).filter(TelegramAdmin.user_id == user_id).first()
