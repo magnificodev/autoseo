@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { UserDropdown } from '@/components/dashboard/UserDropdown';
+import { ModeToggle } from '@/components/ui/mode-toggle';
 import { 
   User, 
   LogOut, 
@@ -92,35 +94,8 @@ export default function ClientAuthLinks() {
 
         return (
             <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-3">
-                    <div className="flex items-center space-x-3">
-                        <div className="p-2 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 border border-blue-200 dark:border-blue-800">
-                            <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div className="text-sm">
-                            <span className="text-muted-foreground">Welcome, </span>
-                            <span className="font-semibold text-foreground">{user.name || user.email}</span>
-                        </div>
-                    </div>
-                    {user.role && (
-                        <Badge 
-                            variant={getRoleBadgeVariant(user.role.name)}
-                            className="flex items-center space-x-1.5 px-2.5 py-1"
-                        >
-                            {user.role.name === 'admin' && <Shield className="h-3 w-3" />}
-                            <span className="capitalize text-xs font-medium">{user.role.name}</span>
-                        </Badge>
-                    )}
-                </div>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleLogout}
-                    className="flex items-center space-x-2 hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-all duration-200"
-                >
-                    <LogOut className="h-4 w-4" />
-                    <span>Logout</span>
-                </Button>
+                <ModeToggle />
+                <UserDropdown user={user} onLogout={handleLogout} />
             </div>
         );
     }

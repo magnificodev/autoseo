@@ -6,6 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Skeleton } from '../components/ui/skeleton';
+import { StatCard } from '../components/dashboard/StatCard';
+import { QuickActionCard } from '../components/dashboard/QuickActionCard';
+import { RecentActivityList } from '../components/dashboard/RecentActivityList';
 import { 
   Globe, 
   Search, 
@@ -82,67 +85,55 @@ export default function DashboardPage() {
       title: 'Total Sites',
       value: stats.totalSites,
       icon: Globe,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50 dark:bg-blue-950/20',
-      borderColor: 'border-blue-200 dark:border-blue-800',
+      color: 'blue' as const,
       description: 'WordPress sites connected',
-      trend: '+2 this week',
-      trendDirection: 'up' as const
+      trend: { value: '+2 this week', direction: 'up' as const },
+      progress: 75
     },
     {
       title: 'Keywords',
       value: stats.totalKeywords,
       icon: Search,
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-50 dark:bg-emerald-950/20',
-      borderColor: 'border-emerald-200 dark:border-emerald-800',
+      color: 'emerald' as const,
       description: 'Keywords being tracked',
-      trend: '+12% this month',
-      trendDirection: 'up' as const
+      trend: { value: '+12% this month', direction: 'up' as const },
+      progress: 85
     },
     {
       title: 'Pending Content',
       value: stats.pendingContent,
       icon: Clock,
-      color: 'text-amber-600',
-      bgColor: 'bg-amber-50 dark:bg-amber-950/20',
-      borderColor: 'border-amber-200 dark:border-amber-800',
+      color: 'amber' as const,
       description: 'Awaiting approval',
-      trend: '-3 from yesterday',
-      trendDirection: 'down' as const
+      trend: { value: '-3 from yesterday', direction: 'down' as const },
+      progress: 30
     },
     {
       title: 'Published',
       value: stats.publishedContent,
       icon: CheckCircle,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50 dark:bg-green-950/20',
-      borderColor: 'border-green-200 dark:border-green-800',
+      color: 'green' as const,
       description: 'Successfully published',
-      trend: '+8 today',
-      trendDirection: 'up' as const
+      trend: { value: '+8 today', direction: 'up' as const },
+      progress: 92
     },
     {
       title: 'Users',
       value: stats.totalUsers,
       icon: Users,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50 dark:bg-purple-950/20',
-      borderColor: 'border-purple-200 dark:border-purple-800',
+      color: 'purple' as const,
       description: 'Active users',
-      trend: '+1 new user',
-      trendDirection: 'up' as const
+      trend: { value: '+1 new user', direction: 'up' as const },
+      progress: 60
     },
     {
       title: 'Activity',
       value: stats.recentActivity,
       icon: Activity,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50 dark:bg-orange-950/20',
-      borderColor: 'border-orange-200 dark:border-orange-800',
+      color: 'orange' as const,
       description: 'Actions today',
-      trend: '3 pending',
-      trendDirection: 'neutral' as const
+      trend: { value: '3 pending', direction: 'neutral' as const },
+      progress: 45
     }
   ];
 
@@ -152,39 +143,39 @@ export default function DashboardPage() {
       description: 'Add or configure WordPress sites',
       icon: Globe,
       href: '/sites',
-      color: 'hover:bg-blue-50 hover:border-blue-200 dark:hover:bg-blue-950/20',
-      iconColor: 'text-blue-600'
+      color: 'blue' as const,
+      badge: '5 sites'
     },
     {
       title: 'View Keywords',
       description: 'Track and manage keywords',
       icon: Search,
       href: '/keywords',
-      color: 'hover:bg-emerald-50 hover:border-emerald-200 dark:hover:bg-emerald-950/20',
-      iconColor: 'text-emerald-600'
+      color: 'emerald' as const,
+      badge: '24 active'
     },
     {
       title: 'Content Queue',
       description: 'Review and approve content',
       icon: FileText,
       href: '/content-queue',
-      color: 'hover:bg-amber-50 hover:border-amber-200 dark:hover:bg-amber-950/20',
-      iconColor: 'text-amber-600'
+      color: 'amber' as const,
+      badge: '8 pending'
     },
     {
       title: 'User Management',
       description: 'Manage users and permissions',
       icon: Users,
       href: '/users',
-      color: 'hover:bg-purple-50 hover:border-purple-200 dark:hover:bg-purple-950/20',
-      iconColor: 'text-purple-600'
+      color: 'purple' as const,
+      badge: '12 users'
     }
   ];
 
-  const recentActivity: ActivityItem[] = [
+  const recentActivity = [
     {
       id: '1',
-      type: 'success',
+      type: 'publish' as const,
       title: 'Content published successfully',
       description: 'New blog post "SEO Best Practices 2024" was published to example.com',
       timestamp: '2 minutes ago',
@@ -192,7 +183,7 @@ export default function DashboardPage() {
     },
     {
       id: '2',
-      type: 'warning',
+      type: 'warning' as const,
       title: 'New content pending review',
       description: 'Article "Keyword Research Guide" is waiting for approval',
       timestamp: '15 minutes ago',
@@ -200,18 +191,34 @@ export default function DashboardPage() {
     },
     {
       id: '3',
-      type: 'info',
+      type: 'info' as const,
       title: 'New user registered',
       description: 'User mike@example.com joined the platform',
       timestamp: '1 hour ago'
     },
     {
       id: '4',
-      type: 'success',
+      type: 'site' as const,
       title: 'Site connection established',
       description: 'Successfully connected to newsite.com WordPress installation',
       timestamp: '2 hours ago',
       user: 'Admin'
+    },
+    {
+      id: '5',
+      type: 'success' as const,
+      title: 'Keyword research completed',
+      description: 'Generated 15 new keyword suggestions for "digital marketing"',
+      timestamp: '3 hours ago',
+      user: 'System'
+    },
+    {
+      id: '6',
+      type: 'error' as const,
+      title: 'Content generation failed',
+      description: 'Failed to generate content for "AI automation" due to API rate limit',
+      timestamp: '4 hours ago',
+      user: 'System'
     }
   ];
 
@@ -295,36 +302,19 @@ export default function DashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {statCards.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <Card 
-              key={index} 
-              className={`group relative overflow-hidden border-l-4 ${stat.borderColor} hover:shadow-lg transition-all duration-300 animate-in slide-in-from-bottom-4`}
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`p-2.5 rounded-xl ${stat.bgColor} group-hover:scale-110 transition-transform duration-200`}>
-                    <Icon className={`h-5 w-5 ${stat.color}`} />
-                  </div>
-                  <div className="flex items-center space-x-1 text-xs font-medium text-muted-foreground">
-                    {stat.trendDirection === 'up' && <ArrowUpRight className="h-3 w-3 text-green-600" />}
-                    {stat.trendDirection === 'down' && <ArrowDownRight className="h-3 w-3 text-red-600" />}
-                    <span className={stat.trendDirection === 'up' ? 'text-green-600' : stat.trendDirection === 'down' ? 'text-red-600' : 'text-muted-foreground'}>
-                      {stat.trend}
-                    </span>
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-3xl font-bold text-foreground">{stat.value}</div>
-                  <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
-                  <p className="text-xs text-muted-foreground">{stat.description}</p>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+        {statCards.map((stat, index) => (
+          <StatCard
+            key={index}
+            title={stat.title}
+            value={stat.value}
+            description={stat.description}
+            icon={stat.icon}
+            color={stat.color}
+            trend={stat.trend}
+            progress={stat.progress}
+            delay={index}
+          />
+        ))}
       </div>
 
       {/* Quick Actions */}
@@ -337,32 +327,18 @@ export default function DashboardPage() {
           </Button>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {quickActions.map((action, index) => {
-            const Icon = action.icon;
-            return (
-              <Card 
-                key={index} 
-                className={`group cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] ${action.color} animate-in slide-in-from-bottom-4`}
-                style={{ animationDelay: `${(index + 6) * 100}ms` }}
-                onClick={() => router.push(action.href)}
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-center space-x-4 mb-3">
-                    <div className={`p-2.5 rounded-xl bg-muted/50 group-hover:bg-white/80 dark:group-hover:bg-white/10 transition-colors duration-200`}>
-                      <Icon className={`h-5 w-5 ${action.iconColor}`} />
-                    </div>
-                    <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors duration-200" />
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="font-semibold text-foreground group-hover:text-foreground transition-colors duration-200">
-                      {action.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">{action.description}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+          {quickActions.map((action, index) => (
+            <QuickActionCard
+              key={index}
+              title={action.title}
+              description={action.description}
+              icon={action.icon}
+              href={action.href}
+              color={action.color}
+              badge={action.badge}
+              delay={index + 6}
+            />
+          ))}
         </div>
       </div>
 
@@ -375,47 +351,7 @@ export default function DashboardPage() {
             View All
           </Button>
         </div>
-        <Card className="overflow-hidden">
-          <CardHeader className="pb-4">
-            <div className="flex items-center space-x-2">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Activity className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <CardTitle className="text-lg">System Activity</CardTitle>
-                <CardDescription>Latest actions and system updates</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="divide-y divide-border">
-              {recentActivity.map((activity, index) => (
-                <div 
-                  key={activity.id}
-                  className="flex items-start space-x-4 p-6 hover:bg-muted/50 transition-colors duration-200 animate-in slide-in-from-left-4"
-                  style={{ animationDelay: `${(index + 10) * 100}ms` }}
-                >
-                  <div className="flex-shrink-0 mt-0.5">
-                    {getActivityIcon(activity.type)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-foreground">{activity.title}</p>
-                      <p className="text-xs text-muted-foreground">{activity.timestamp}</p>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1">{activity.description}</p>
-                    {activity.user && (
-                      <div className="flex items-center space-x-1 mt-2">
-                        <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">by {activity.user}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <RecentActivityList activities={recentActivity} />
       </div>
 
       {/* Performance Overview */}
