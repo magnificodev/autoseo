@@ -7,7 +7,7 @@
     ],
     "jsx": "preserve",
     "module": "esnext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
       "@/*": [
