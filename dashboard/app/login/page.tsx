@@ -18,13 +18,16 @@ export default function LoginPage() {
         setError('');
 
         try {
-            const response = await fetch('/api/auth/login', {
+            const response = await fetch('/api/auth/login-cookie', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/x-www-form-urlencoded',
                 },
                 credentials: 'include',
-                body: JSON.stringify({ email, password }),
+                body: new URLSearchParams({
+                    username: email,
+                    password: password,
+                }),
             });
 
             if (response.ok) {
