@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Badge } from '../../components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { usePermissions } from '@/src/hooks/usePermissions';
+import { usePermissions } from '../../src/hooks/usePermissions';
 import { Shield, Users, UserCheck, UserX, AlertCircle } from 'lucide-react';
 
 type User = {
