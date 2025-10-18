@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Card } from '../../../components/ui/card';
-import { Button } from '../../../components/ui/button';
+import { useEffect, useState } from 'react';
 import { Badge } from '../../../components/ui/badge';
-import { Textarea } from '../../../components/ui/textarea';
+import { Button } from '../../../components/ui/button';
+import { Card } from '../../../components/ui/card';
 import {
     Table,
     TableBody,
@@ -13,6 +12,7 @@ import {
     TableHeader,
     TableRow,
 } from '../../../components/ui/table';
+import { Textarea } from '../../../components/ui/textarea';
 
 interface RoleApplication {
     id: number;
@@ -30,7 +30,7 @@ export default function AdminRoleApplicationsPage() {
     const [applications, setApplications] = useState<RoleApplication[]>([]);
     const [loading, setLoading] = useState(true);
     const [reviewForm, setReviewForm] = useState<{
-        [key: number]: { status: string; admin_notes: string }
+        [key: number]: { status: string; admin_notes: string };
     }>({});
 
     useEffect(() => {
@@ -65,7 +65,7 @@ export default function AdminRoleApplicationsPage() {
             });
 
             if (response.ok) {
-                setReviewForm(prev => {
+                setReviewForm((prev) => {
                     const newForm = { ...prev };
                     delete newForm[applicationId];
                     return newForm;
@@ -85,9 +85,9 @@ export default function AdminRoleApplicationsPage() {
         const variants = {
             pending: 'secondary',
             approved: 'default',
-            rejected: 'destructive'
+            rejected: 'destructive',
         } as const;
-        
+
         return (
             <Badge variant={variants[status as keyof typeof variants] || 'secondary'}>
                 {status.toUpperCase()}
@@ -128,9 +128,7 @@ export default function AdminRoleApplicationsPage() {
                                         {app.requested_role.toUpperCase()}
                                     </Badge>
                                 </TableCell>
-                                <TableCell className="max-w-xs truncate">
-                                    {app.reason}
-                                </TableCell>
+                                <TableCell className="max-w-xs truncate">{app.reason}</TableCell>
                                 <TableCell>{getStatusBadge(app.status)}</TableCell>
                                 <TableCell>
                                     {new Date(app.created_at).toLocaleDateString()}
@@ -141,20 +139,30 @@ export default function AdminRoleApplicationsPage() {
                                             <div className="flex gap-2">
                                                 <Button
                                                     size="sm"
-                                                    onClick={() => setReviewForm(prev => ({
-                                                        ...prev,
-                                                        [app.id]: { ...prev[app.id], status: 'approved' }
-                                                    }))}
+                                                    onClick={() =>
+                                                        setReviewForm((prev) => ({
+                                                            ...prev,
+                                                            [app.id]: {
+                                                                ...prev[app.id],
+                                                                status: 'approved',
+                                                            },
+                                                        }))
+                                                    }
                                                 >
                                                     Approve
                                                 </Button>
                                                 <Button
                                                     size="sm"
                                                     variant="destructive"
-                                                    onClick={() => setReviewForm(prev => ({
-                                                        ...prev,
-                                                        [app.id]: { ...prev[app.id], status: 'rejected' }
-                                                    }))}
+                                                    onClick={() =>
+                                                        setReviewForm((prev) => ({
+                                                            ...prev,
+                                                            [app.id]: {
+                                                                ...prev[app.id],
+                                                                status: 'rejected',
+                                                            },
+                                                        }))
+                                                    }
                                                 >
                                                     Reject
                                                 </Button>
@@ -162,13 +170,15 @@ export default function AdminRoleApplicationsPage() {
                                             <Textarea
                                                 placeholder="Admin notes..."
                                                 value={reviewForm[app.id]?.admin_notes || ''}
-                                                onChange={(e) => setReviewForm(prev => ({
-                                                    ...prev,
-                                                    [app.id]: { 
-                                                        ...prev[app.id], 
-                                                        admin_notes: e.target.value 
-                                                    }
-                                                }))}
+                                                onChange={(e) =>
+                                                    setReviewForm((prev) => ({
+                                                        ...prev,
+                                                        [app.id]: {
+                                                            ...prev[app.id],
+                                                            admin_notes: e.target.value,
+                                                        },
+                                                    }))
+                                                }
                                                 rows={2}
                                             />
                                             <Button
@@ -181,14 +191,15 @@ export default function AdminRoleApplicationsPage() {
                                         </div>
                                     ) : (
                                         <div className="text-sm text-gray-600">
-                                            {app.admin_notes && (
-                                                <div>Notes: {app.admin_notes}</div>
-                                            )}
+                                            {app.admin_notes && <div>Notes: {app.admin_notes}</div>}
                                             {app.reviewer_email && (
                                                 <div>Reviewed by: {app.reviewer_email}</div>
                                             )}
                                             {app.reviewed_at && (
-                                                <div>Reviewed: {new Date(app.reviewed_at).toLocaleDateString()}</div>
+                                                <div>
+                                                    Reviewed:{' '}
+                                                    {new Date(app.reviewed_at).toLocaleDateString()}
+                                                </div>
                                             )}
                                         </div>
                                     )}

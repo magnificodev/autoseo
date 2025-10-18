@@ -1,11 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Card } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
+import React, { useEffect, useState } from 'react';
 import { Badge } from '../../components/ui/badge';
-import { Input } from '../../components/ui/input';
-import { Textarea } from '../../components/ui/textarea';
+import { Button } from '../../components/ui/button';
+import { Card } from '../../components/ui/card';
 import {
     Table,
     TableBody,
@@ -14,6 +12,7 @@ import {
     TableHeader,
     TableRow,
 } from '../../components/ui/table';
+import { Textarea } from '../../components/ui/textarea';
 
 interface RoleApplication {
     id: number;
@@ -33,10 +32,10 @@ export default function RoleApplicationsPage() {
     const [showApplyForm, setShowApplyForm] = useState(false);
     const [applyForm, setApplyForm] = useState({
         requested_role: 'manager',
-        reason: ''
+        reason: '',
     });
     const [reviewForm, setReviewForm] = useState<{
-        [key: number]: { status: string; admin_notes: string }
+        [key: number]: { status: string; admin_notes: string };
     }>({});
 
     useEffect(() => {
@@ -110,7 +109,7 @@ export default function RoleApplicationsPage() {
             });
 
             if (response.ok) {
-                setReviewForm(prev => {
+                setReviewForm((prev) => {
                     const newForm = { ...prev };
                     delete newForm[applicationId];
                     return newForm;
@@ -150,9 +149,9 @@ export default function RoleApplicationsPage() {
         const variants = {
             pending: 'secondary',
             approved: 'default',
-            rejected: 'destructive'
+            rejected: 'destructive',
         } as const;
-        
+
         return (
             <Badge variant={variants[status as keyof typeof variants] || 'secondary'}>
                 {status.toUpperCase()}
@@ -172,9 +171,7 @@ export default function RoleApplicationsPage() {
         <div className="container mx-auto p-6">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">Role Applications</h1>
-                <Button onClick={() => setShowApplyForm(!showApplyForm)}>
-                    Apply for Role
-                </Button>
+                <Button onClick={() => setShowApplyForm(!showApplyForm)}>Apply for Role</Button>
             </div>
 
             {showApplyForm && (
@@ -182,15 +179,15 @@ export default function RoleApplicationsPage() {
                     <h2 className="text-lg font-semibold mb-4">Apply for Role</h2>
                     <form onSubmit={handleApply}>
                         <div className="mb-4">
-                            <label className="block text-sm font-medium mb-2">
-                                Requested Role
-                            </label>
+                            <label className="block text-sm font-medium mb-2">Requested Role</label>
                             <select
                                 value={applyForm.requested_role}
-                                onChange={(e) => setApplyForm(prev => ({
-                                    ...prev,
-                                    requested_role: e.target.value
-                                }))}
+                                onChange={(e) =>
+                                    setApplyForm((prev) => ({
+                                        ...prev,
+                                        requested_role: e.target.value,
+                                    }))
+                                }
                                 className="w-full p-2 border rounded"
                             >
                                 <option value="manager">Manager</option>
@@ -198,23 +195,23 @@ export default function RoleApplicationsPage() {
                             </select>
                         </div>
                         <div className="mb-4">
-                            <label className="block text-sm font-medium mb-2">
-                                Reason
-                            </label>
+                            <label className="block text-sm font-medium mb-2">Reason</label>
                             <Textarea
                                 value={applyForm.reason}
-                                onChange={(e) => setApplyForm(prev => ({
-                                    ...prev,
-                                    reason: e.target.value
-                                }))}
+                                onChange={(e) =>
+                                    setApplyForm((prev) => ({
+                                        ...prev,
+                                        reason: e.target.value,
+                                    }))
+                                }
                                 placeholder="Explain why you want this role..."
                                 rows={4}
                             />
                         </div>
                         <div className="flex gap-2">
                             <Button type="submit">Submit Application</Button>
-                            <Button 
-                                type="button" 
+                            <Button
+                                type="button"
                                 variant="outline"
                                 onClick={() => setShowApplyForm(false)}
                             >
@@ -246,9 +243,7 @@ export default function RoleApplicationsPage() {
                                         {app.requested_role.toUpperCase()}
                                     </Badge>
                                 </TableCell>
-                                <TableCell className="max-w-xs truncate">
-                                    {app.reason}
-                                </TableCell>
+                                <TableCell className="max-w-xs truncate">{app.reason}</TableCell>
                                 <TableCell>{getStatusBadge(app.status)}</TableCell>
                                 <TableCell>
                                     {new Date(app.created_at).toLocaleDateString()}
@@ -256,10 +251,7 @@ export default function RoleApplicationsPage() {
                                 <TableCell>
                                     {app.status === 'pending' && (
                                         <div className="flex gap-2">
-                                            <Button
-                                                size="sm"
-                                                onClick={() => handleCancel(app.id)}
-                                            >
+                                            <Button size="sm" onClick={() => handleCancel(app.id)}>
                                                 Cancel
                                             </Button>
                                         </div>
