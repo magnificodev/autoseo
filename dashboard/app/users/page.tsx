@@ -140,12 +140,10 @@ export default function UsersPage() {
   if (!canManageUsers) {
     return (
       <div className="container mx-auto py-6">
-        <Alert variant="destructive">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded flex items-center space-x-2">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Bạn không có quyền truy cập trang này. Chỉ Admin mới có thể quản lý người dùng.
-          </AlertDescription>
-        </Alert>
+          <span>Bạn không có quyền truy cập trang này. Chỉ Admin mới có thể quản lý người dùng.</span>
+        </div>
       </div>
     );
   }
@@ -170,8 +168,8 @@ export default function UsersPage() {
 
       {error && (
         <Alert variant="destructive" className="mb-4">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+          {error}
+        </div>
       )}
 
       <Card>

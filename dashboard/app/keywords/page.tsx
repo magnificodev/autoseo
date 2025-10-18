@@ -303,7 +303,7 @@ export default function KeywordsPage() {
                                             Sửa
                                         </Button>
                                         <Button
-                                            variant="danger"
+                                            variant="destructive"
                                             size="sm"
                                             onClick={() => handleDelete(keyword.id)}
                                         >

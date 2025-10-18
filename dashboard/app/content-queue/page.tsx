@@ -184,7 +184,7 @@ export default function ContentQueuePage() {
                                                         {item.status === 'pending' && (
                                                             <>
                                                                 <Button
-                                                                    variant="danger"
+                                                                    variant="destructive"
                                                                     onClick={() =>
                                                                         handleStatusChange(
                                                                             item.id,
@@ -214,7 +214,7 @@ export default function ContentQueuePage() {
                                             <div className="flex gap-1">
                                                 <Button
                                                     size="sm"
-                                                    variant="danger"
+                                                    variant="destructive"
                                                     onClick={() =>
                                                         handleStatusChange(item.id, 'rejected')
                                                     }
