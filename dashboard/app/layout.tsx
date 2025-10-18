@@ -24,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                                             A
                                         </span>
                                     </div>
-                                    <span className="text-xl font-bold gradient-text">Autoseo</span>
+                                    <span className="text-xl font-bold text-foreground">Autoseo</span>
                                 </div>
                             </div>
                             <div className="flex-1 overflow-y-auto p-4">
@@ -45,7 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                                                         A
                                                     </span>
                                                 </div>
-                                                <span className="text-xl font-bold gradient-text">
+                                                <span className="text-xl font-bold text-foreground">
                                                     Autoseo
                                                 </span>
                                             </div>

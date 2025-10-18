@@ -102,12 +102,6 @@ Each theme uses CSS custom properties (variables) that you can override:
 -   `.neumorphism-input` - Soft 3D input
 -   `.neumorphism-flat` - Flat neumorphism element
 
-### Gradient
-
--   `.gradient-card` - Gradient background card
--   `.gradient-button` - Gradient button
--   `.gradient-text` - Gradient text effect
--   `.gradient-bg` - Gradient background
 
 ### Cyberpunk
 

@@ -171,7 +171,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight gradient-text">Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
           <p className="text-muted-foreground">Welcome to Autoseo Dashboard - Your SEO automation hub</p>
         </div>
         <div className="flex items-center space-x-2">
