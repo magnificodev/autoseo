@@ -8,10 +8,22 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN echo "=== DEBUG: Current directory structure ==="
 RUN pwd
 RUN ls -la
+RUN echo "=== DEBUG: Looking for components directory ==="
 RUN find . -name "components" -type d
+RUN echo "=== DEBUG: Looking for UI components ==="
 RUN find . -name "badge.tsx" -type f
+RUN find . -name "button.tsx" -type f
+RUN find . -name "input.tsx" -type f
+RUN echo "=== DEBUG: Components directory contents ==="
+RUN ls -la components/ 2>/dev/null || echo "components/ directory not found"
+RUN ls -la components/ui/ 2>/dev/null || echo "components/ui/ directory not found"
+RUN echo "=== DEBUG: App directory structure ==="
+RUN ls -la app/
+RUN ls -la app/audit-logs/
+RUN echo "=== DEBUG: Starting build ==="
 RUN npm run build
 
 FROM node:20-alpine AS runner
