@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from src.api.deps.auth import get_current_user, get_db
+from src.api.middleware.permissions import require_admin
 from src.database.models import TelegramAdmin, User
 
 
@@ -22,27 +23,20 @@ class AdminCreateIn(BaseModel):
     user_id: int = Field(..., ge=1)
 
 
-def _ensure_dashboard_admin(user: User) -> None:
-    # Simple policy: only admin users can manage admins via dashboard/API.
-    # Allow user ID 3 (admin@autoseo.com) for now
-    if user.id not in [1, 3]:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="forbidden")
-
-
 @router.get("/", response_model=List[AdminOut])
+@require_admin
 def list_admins(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    _ensure_dashboard_admin(current_user)
     rows = db.query(TelegramAdmin).all()
     return [AdminOut(user_id=r.user_id) for r in rows]
 
 
 @router.post("/", response_model=AdminOut, status_code=201)
+@require_admin
 def create_admin(
     body: AdminCreateIn,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    _ensure_dashboard_admin(current_user)
     exists = db.query(TelegramAdmin).filter(TelegramAdmin.user_id == body.user_id).first()
     if exists:
         return AdminOut(user_id=exists.user_id)
@@ -53,12 +47,12 @@ def create_admin(
 
 
 @router.delete("/{user_id}", status_code=204)
+@require_admin
 def delete_admin(
     user_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    _ensure_dashboard_admin(current_user)
     row = db.query(TelegramAdmin).filter(TelegramAdmin.user_id == user_id).first()
     if not row:
         return

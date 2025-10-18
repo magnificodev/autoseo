@@ -2,13 +2,13 @@ import os
 from datetime import datetime, timedelta
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Form
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from src.api.deps.auth import get_current_user
-from src.database.models import Base, User
+from src.database.models import Base, User, Role
 from src.database.session import SessionLocal, engine
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -46,23 +46,53 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 
 @router.post("/register")
-def register(email: str, password: str, db: Session = Depends(get_db)):
+def register(
+    email: str = Form(...),
+    password: str = Form(...),
+    db: Session = Depends(get_db)
+):
     # Đảm bảo bảng tồn tại trong trường hợp startup hook chưa chạy
     try:
         Base.metadata.create_all(bind=engine)
     except Exception:
         pass
+    
+    # Email validation
+    if not email or "@" not in email:
+        raise HTTPException(status_code=400, detail="Email không hợp lệ")
+    
+    # Password strength check
+    if len(password) < 6:
+        raise HTTPException(status_code=400, detail="Mật khẩu phải có ít nhất 6 ký tự")
+    
+    # Check if email already exists
     if db.query(User).filter(User.email == email).first():
         raise HTTPException(status_code=400, detail="Email đã tồn tại")
+    
     try:
-        user = User(email=email, password_hash=hash_password(password))
+        # Get default viewer role
+        viewer_role = db.query(Role).filter(Role.name == "viewer").first()
+        if not viewer_role:
+            # Create default roles if they don't exist
+            admin_role = Role(name="admin", max_users=1, permissions='["*"]')
+            manager_role = Role(name="manager", max_users=5, permissions='["dashboard.view", "sites.*", "keywords.*", "content.*", "audit_logs.view"]')
+            viewer_role = Role(name="viewer", max_users=-1, permissions='["dashboard.view", "audit_logs.view"]')
+            db.add_all([admin_role, manager_role, viewer_role])
+            db.commit()
+            db.refresh(viewer_role)
+        
+        # Create user with viewer role
+        user = User(
+            email=email,
+            password_hash=hash_password(password),
+            role_id=viewer_role.id
+        )
         db.add(user)
         db.commit()
         db.refresh(user)
-        return {"id": user.id, "email": user.email}
+        return {"id": user.id, "email": user.email, "role": "viewer"}
     except Exception as e:
         db.rollback()
-        # Trả lỗi chi tiết để chẩn đoán trên staging (tạm thời)
         raise HTTPException(status_code=500, detail=f"register_failed: {e}")
 
 
@@ -112,6 +142,10 @@ def get_current_user_info(current_user: User = Depends(get_current_user)):
         "email": current_user.email,
         "name": current_user.email.split("@")[0],  # Use email prefix as name
         "is_active": current_user.is_active,
+        "role": {
+            "id": current_user.role.id if current_user.role else None,
+            "name": current_user.role.name if current_user.role else "unknown"
+        }
     }
 
 
