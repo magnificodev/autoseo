@@ -64,6 +64,69 @@ def create_site(
     return body
 
 
+@router.get("/{site_id}", response_model=SiteOut)
+def get_site(
+    site_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    site = db.get(Site, site_id)
+    if not site:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Site not found")
+    
+    return SiteOut.model_validate(
+        {
+            "name": site.name,
+            "wp_url": site.wp_url,
+            "wp_username": site.wp_username,
+            "wp_password_enc": site.wp_password_enc,
+            "is_auto_enabled": getattr(site, "is_auto_enabled", None),
+            "schedule_cron": getattr(site, "schedule_cron", None),
+            "daily_quota": getattr(site, "daily_quota", None),
+            "active_start_hour": getattr(site, "active_start_hour", None),
+            "active_end_hour": getattr(site, "active_end_hour", None),
+        }
+    )
+
+
+@router.put("/{site_id}", response_model=SiteOut)
+def update_site_full(
+    site_id: int,
+    body: SiteIn,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    site = db.get(Site, site_id)
+    if not site:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Site not found")
+    
+    # Update all fields
+    site.name = body.name
+    site.wp_url = body.wp_url
+    site.wp_username = body.wp_username
+    site.wp_password_enc = body.wp_password_enc
+    
+    db.add(site)
+    db.commit()
+    db.refresh(site)
+    
+    return SiteOut.model_validate(
+        {
+            "name": site.name,
+            "wp_url": site.wp_url,
+            "wp_username": site.wp_username,
+            "wp_password_enc": site.wp_password_enc,
+            "is_auto_enabled": getattr(site, "is_auto_enabled", None),
+            "schedule_cron": getattr(site, "schedule_cron", None),
+            "daily_quota": getattr(site, "daily_quota", None),
+            "active_start_hour": getattr(site, "active_start_hour", None),
+            "active_end_hour": getattr(site, "active_end_hour", None),
+        }
+    )
+
+
 @router.patch("/{site_id}", response_model=SiteOut)
 def update_site(
     site_id: int,
@@ -107,20 +170,44 @@ def update_site(
     )
 
 
+@router.delete("/{site_id}")
+def delete_site(
+    site_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    site = db.get(Site, site_id)
+    if not site:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Site not found")
+    
+    db.delete(site)
+    db.commit()
+    return {"message": "Site deleted successfully"}
+
+
 class TestConnectionOut(BaseModel):
     ok: bool
 
 
-@router.post("/test-connection", response_model=TestConnectionOut)
-def test_connection(body: SiteIn, user=Depends(get_current_user)):
+@router.post("/{site_id}/test-connection", response_model=TestConnectionOut)
+def test_site_connection(
+    site_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user)
+):
+    site = db.get(Site, site_id)
+    if not site:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Site not found")
     # Normalize URL to include scheme
-    wp_url = body.wp_url.strip()
+    wp_url = site.wp_url.strip()
     if not (wp_url.startswith("http://") or wp_url.startswith("https://")):
         wp_url = "https://" + wp_url
     creds = WordPressCredentials(
         base_url=wp_url,
-        username=body.wp_username,
-        password=body.wp_password_enc,
+        username=site.wp_username,
+        password=site.wp_password_enc,
     )
     try:
         client = WordPressClient(creds)

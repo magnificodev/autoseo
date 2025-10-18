@@ -13,8 +13,8 @@ export async function POST(request: NextRequest) {
         const formData = new URLSearchParams();
         formData.append('username', email);
         formData.append('password', password);
-        
-        const response = await fetch(`${backendUrl}/auth/login-cookie`, {
+
+        const response = await fetch(`${backendUrl}/api/auth/login-cookie`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',

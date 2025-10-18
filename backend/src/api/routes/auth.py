@@ -4,16 +4,16 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from src.api.deps.auth import get_current_user
 from jose import jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
+from src.api.deps.auth import get_current_user
 from src.database.models import Base, User
 from src.database.session import SessionLocal, engine
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(prefix="/api/auth", tags=["auth"])
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 JWT_SECRET = os.getenv("JWT_SECRET", "change-me")
@@ -111,7 +111,7 @@ def get_current_user_info(current_user: User = Depends(get_current_user)):
         "id": current_user.id,
         "email": current_user.email,
         "name": current_user.email.split("@")[0],  # Use email prefix as name
-        "is_active": current_user.is_active
+        "is_active": current_user.is_active,
     }
 
 

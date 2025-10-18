@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
 
         // Forward to backend API
         const backendUrl = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
-        const response = await fetch(`${backendUrl}/auth/me`, {
+        const response = await fetch(`${backendUrl}/api/auth/me`, {
             headers: {
                 Cookie: `token=${token}`,
             },
