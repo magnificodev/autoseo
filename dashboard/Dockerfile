@@ -24,6 +24,11 @@ RUN echo "=== DEBUG: App directory structure ==="
 RUN ls -la app/
 RUN ls -la app/audit-logs/
 RUN echo "=== DEBUG: Starting build ==="
+RUN echo "=== DEBUG: Check if components exist before build ==="
+RUN ls -la components/ || echo "components/ not found"
+RUN ls -la components/ui/ || echo "components/ui/ not found"
+RUN echo "=== DEBUG: Check tsconfig.json ==="
+RUN cat tsconfig.json | grep -A 5 "paths"
 RUN npm run build
 
 FROM node:20-alpine AS runner

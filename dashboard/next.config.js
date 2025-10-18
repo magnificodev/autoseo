@@ -2,7 +2,7 @@
 const nextConfig = {
     reactStrictMode: true,
     output: 'standalone',
-    webpack: (config) => {
+    webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
         config.resolve.alias = {
             ...config.resolve.alias,
             '@': require('path').resolve(__dirname),
