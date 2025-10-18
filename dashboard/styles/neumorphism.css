@@ -1,0 +1,54 @@
+/* Neumorphism Design System */
+:root {
+    --neu-bg: #e0e5ec;
+    --neu-shadow-light: #ffffff;
+    --neu-shadow-dark: #a3b1c6;
+    --neu-inset-light: #ffffff;
+    --neu-inset-dark: #a3b1c6;
+}
+
+.neumorphism-card {
+    background: var(--neu-bg);
+    border-radius: 20px;
+    box-shadow: 20px 20px 60px var(--neu-shadow-dark), -20px -20px 60px var(--neu-shadow-light);
+    border: none;
+}
+
+.neumorphism-button {
+    background: var(--neu-bg);
+    border: none;
+    border-radius: 15px;
+    box-shadow: 8px 8px 16px var(--neu-shadow-dark), -8px -8px 16px var(--neu-shadow-light);
+    transition: all 0.2s ease;
+}
+
+.neumorphism-button:hover {
+    box-shadow: 4px 4px 8px var(--neu-shadow-dark), -4px -4px 8px var(--neu-shadow-light);
+    transform: translateY(1px);
+}
+
+.neumorphism-button:active {
+    box-shadow: inset 4px 4px 8px var(--neu-shadow-dark),
+        inset -4px -4px 8px var(--neu-shadow-light);
+    transform: translateY(2px);
+}
+
+.neumorphism-input {
+    background: var(--neu-bg);
+    border: none;
+    border-radius: 12px;
+    box-shadow: inset 6px 6px 12px var(--neu-shadow-dark),
+        inset -6px -6px 12px var(--neu-shadow-light);
+}
+
+.neumorphism-nav {
+    background: var(--neu-bg);
+    border-bottom: none;
+    box-shadow: 0 4px 8px var(--neu-shadow-dark), 0 -4px 8px var(--neu-shadow-light);
+}
+
+.neumorphism-flat {
+    background: var(--neu-bg);
+    border-radius: 12px;
+    box-shadow: 6px 6px 12px var(--neu-shadow-dark), -6px -6px 12px var(--neu-shadow-light);
+}

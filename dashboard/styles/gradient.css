@@ -1,0 +1,83 @@
+/* Gradient & Colorful Design System */
+:root {
+    --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --gradient-success: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --gradient-warning: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    --gradient-danger: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    --gradient-dark: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+}
+
+.gradient-card {
+    background: var(--gradient-primary);
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    color: white;
+}
+
+.gradient-card-secondary {
+    background: var(--gradient-secondary);
+    box-shadow: 0 10px 30px rgba(240, 147, 251, 0.3);
+}
+
+.gradient-card-success {
+    background: var(--gradient-success);
+    box-shadow: 0 10px 30px rgba(79, 172, 254, 0.3);
+}
+
+.gradient-button {
+    background: var(--gradient-primary);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.gradient-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+}
+
+.gradient-button-secondary {
+    background: var(--gradient-secondary);
+    box-shadow: 0 4px 15px rgba(240, 147, 251, 0.4);
+}
+
+.gradient-button-secondary:hover {
+    box-shadow: 0 8px 25px rgba(240, 147, 251, 0.6);
+}
+
+.gradient-nav {
+    background: var(--gradient-dark);
+    border-bottom: none;
+    box-shadow: 0 4px 20px rgba(44, 62, 80, 0.3);
+}
+
+.gradient-input {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    color: white;
+    backdrop-filter: blur(10px);
+}
+
+.gradient-input:focus {
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+}
+
+.gradient-text {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+}
+
+.gradient-bg {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    min-height: 100vh;
+}

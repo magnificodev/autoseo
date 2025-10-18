@@ -150,7 +150,7 @@ jobs:
 
                       # Clean up old containers only (keep images for cache)
                       docker compose down || true
-                      
+
                       # Build and start containers with smart caching
                       docker compose pull || true
                       # Use cache for faster builds, but force rebuild if debugging

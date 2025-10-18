@@ -1,0 +1,105 @@
+/* Cyberpunk/Neon Design System */
+:root {
+    --cyber-bg: #0a0a0a;
+    --cyber-surface: #1a1a1a;
+    --cyber-border: #333333;
+    --cyber-neon-cyan: #00ffff;
+    --cyber-neon-pink: #ff0080;
+    --cyber-neon-green: #00ff00;
+    --cyber-neon-purple: #8000ff;
+    --cyber-text: #ffffff;
+    --cyber-text-muted: #888888;
+}
+
+.cyber-card {
+    background: var(--cyber-surface);
+    border: 1px solid var(--cyber-border);
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    color: var(--cyber-text);
+}
+
+.cyber-button {
+    background: var(--cyber-surface);
+    border: 1px solid var(--cyber-neon-cyan);
+    border-radius: 4px;
+    color: var(--cyber-neon-cyan);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+}
+
+.cyber-button:hover {
+    background: var(--cyber-neon-cyan);
+    color: var(--cyber-bg);
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+    transform: translateY(-1px);
+}
+
+.cyber-button-secondary {
+    border-color: var(--cyber-neon-pink);
+    color: var(--cyber-neon-pink);
+    box-shadow: 0 0 10px rgba(255, 0, 128, 0.3);
+}
+
+.cyber-button-secondary:hover {
+    background: var(--cyber-neon-pink);
+    color: var(--cyber-bg);
+    box-shadow: 0 0 20px rgba(255, 0, 128, 0.6);
+}
+
+.cyber-nav {
+    background: var(--cyber-bg);
+    border-bottom: 1px solid var(--cyber-neon-cyan);
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+}
+
+.cyber-input {
+    background: var(--cyber-surface);
+    border: 1px solid var(--cyber-border);
+    border-radius: 4px;
+    color: var(--cyber-text);
+    transition: all 0.3s ease;
+}
+
+.cyber-input:focus {
+    border-color: var(--cyber-neon-cyan);
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+    outline: none;
+}
+
+.cyber-text-neon {
+    color: var(--cyber-neon-cyan);
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+}
+
+.cyber-bg {
+    background: var(--cyber-bg);
+    min-height: 100vh;
+}
+
+.cyber-grid {
+    background-image: linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+.cyber-glow {
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+}
+
+.cyber-pulse {
+    animation: cyber-pulse 2s infinite;
+}
+
+@keyframes cyber-pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}

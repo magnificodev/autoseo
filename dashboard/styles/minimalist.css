@@ -1,0 +1,109 @@
+/* Minimalist/Clean Design System */
+:root {
+    --min-bg: #ffffff;
+    --min-surface: #f8f9fa;
+    --min-border: #e9ecef;
+    --min-text: #212529;
+    --min-text-muted: #6c757d;
+    --min-primary: #007bff;
+    --min-success: #28a745;
+    --min-warning: #ffc107;
+    --min-danger: #dc3545;
+    --min-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --min-shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.minimalist-card {
+    background: var(--min-bg);
+    border: 1px solid var(--min-border);
+    border-radius: 12px;
+    box-shadow: var(--min-shadow);
+    transition: all 0.2s ease;
+}
+
+.minimalist-card:hover {
+    box-shadow: var(--min-shadow-lg);
+    transform: translateY(-1px);
+}
+
+.minimalist-button {
+    background: var(--min-bg);
+    border: 1px solid var(--min-border);
+    border-radius: 8px;
+    color: var(--min-text);
+    font-weight: 500;
+    transition: all 0.2s ease;
+    box-shadow: var(--min-shadow);
+}
+
+.minimalist-button:hover {
+    background: var(--min-surface);
+    border-color: var(--min-primary);
+    transform: translateY(-1px);
+    box-shadow: var(--min-shadow-lg);
+}
+
+.minimalist-button-primary {
+    background: var(--min-primary);
+    border-color: var(--min-primary);
+    color: white;
+}
+
+.minimalist-button-primary:hover {
+    background: #0056b3;
+    border-color: #0056b3;
+}
+
+.minimalist-nav {
+    background: var(--min-bg);
+    border-bottom: 1px solid var(--min-border);
+    box-shadow: var(--min-shadow);
+}
+
+.minimalist-input {
+    background: var(--min-bg);
+    border: 1px solid var(--min-border);
+    border-radius: 8px;
+    color: var(--min-text);
+    transition: all 0.2s ease;
+}
+
+.minimalist-input:focus {
+    border-color: var(--min-primary);
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    outline: none;
+}
+
+.minimalist-text {
+    color: var(--min-text);
+}
+
+.minimalist-text-muted {
+    color: var(--min-text-muted);
+}
+
+.minimalist-bg {
+    background: var(--min-surface);
+    min-height: 100vh;
+}
+
+.minimalist-spacing {
+    padding: 24px;
+    margin: 16px 0;
+}
+
+.minimalist-divider {
+    height: 1px;
+    background: var(--min-border);
+    margin: 24px 0;
+}
+
+.minimalist-badge {
+    background: var(--min-surface);
+    border: 1px solid var(--min-border);
+    border-radius: 16px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--min-text-muted);
+}
