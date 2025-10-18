@@ -16,6 +16,19 @@ def test_register_and_login_and_content_flow(client):
     assert r.status_code == 200
     token = r.json()["access_token"]
 
+    # Upgrade user to manager role (bypass permission check for test)
+    from src.database.session import SessionLocal
+    from src.database.models import User, Role
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.email == "t1@example.com").first()
+        manager_role = db.query(Role).filter(Role.name == "manager").first()
+        if user and manager_role:
+            user.role_id = manager_role.id
+            db.commit()
+    finally:
+        db.close()
+
     # create site
     r = client.post(
         "/api/sites/",
