@@ -64,12 +64,22 @@ export default function KeywordsPage() {
 
     const { data, error, isLoading, mutate } = useSWR<Keyword[]>(
         `/api/keywords/?${params.toString()}`,
-        fetcher
+        fetcher,
+        {
+            onError: (err) => {
+                console.error('Keywords API error:', err);
+            }
+        }
     );
 
     const { data: sites } = useSWR<{ id: number; name: string }[]>(
-        '/api/sites/',
-        fetcher
+        '/api/sites/', 
+        fetcher,
+        {
+            onError: (err) => {
+                console.error('Sites API error:', err);
+            }
+        }
     );
 
     function next() {
@@ -154,21 +164,15 @@ export default function KeywordsPage() {
                         </DialogHeader>
                         <form action={handleCreate} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium mb-1">
-                                    Từ khóa *
-                                </label>
+                                <label className="block text-sm font-medium mb-1">Từ khóa *</label>
                                 <Input name="keyword" required />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium mb-1">
-                                    Danh mục
-                                </label>
+                                <label className="block text-sm font-medium mb-1">Danh mục</label>
                                 <Input name="category" />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium mb-1">
-                                    Site *
-                                </label>
+                                <label className="block text-sm font-medium mb-1">Site *</label>
                                 <select
                                     name="site_id"
                                     required
@@ -183,9 +187,7 @@ export default function KeywordsPage() {
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium mb-1">
-                                    Trạng thái
-                                </label>
+                                <label className="block text-sm font-medium mb-1">Trạng thái</label>
                                 <select
                                     name="status"
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
@@ -236,7 +238,15 @@ export default function KeywordsPage() {
                 </Button>
             </div>
 
-            {error && <div className="text-red-600 text-sm">{String(error.message || error)}</div>}
+            {error && (
+                <div className="text-red-600 text-sm">
+                    {String(error.message || error)}
+                    <br />
+                    <small className="text-gray-500">
+                        API endpoint có thể chưa được implement. Kiểm tra console để xem chi tiết.
+                    </small>
+                </div>
+            )}
 
             <div className="overflow-x-auto">
                 <Table>
@@ -325,34 +335,19 @@ export default function KeywordsPage() {
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>
-                            Sửa từ khóa: {editingKeyword?.keyword}
-                        </DialogTitle>
+                        <DialogTitle>Sửa từ khóa: {editingKeyword?.keyword}</DialogTitle>
                     </DialogHeader>
                     <form action={handleUpdate} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Từ khóa *
-                            </label>
-                            <Input
-                                name="keyword"
-                                defaultValue={editingKeyword?.keyword}
-                                required
-                            />
+                            <label className="block text-sm font-medium mb-1">Từ khóa *</label>
+                            <Input name="keyword" defaultValue={editingKeyword?.keyword} required />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Danh mục
-                            </label>
-                            <Input
-                                name="category"
-                                defaultValue={editingKeyword?.category}
-                            />
+                            <label className="block text-sm font-medium mb-1">Danh mục</label>
+                            <Input name="category" defaultValue={editingKeyword?.category} />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Site *
-                            </label>
+                            <label className="block text-sm font-medium mb-1">Site *</label>
                             <select
                                 name="site_id"
                                 required
@@ -367,9 +362,7 @@ export default function KeywordsPage() {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Trạng thái
-                            </label>
+                            <label className="block text-sm font-medium mb-1">Trạng thái</label>
                             <select
                                 name="status"
                                 defaultValue={editingKeyword?.status}
