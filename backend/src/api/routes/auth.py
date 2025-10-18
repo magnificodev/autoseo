@@ -138,6 +138,7 @@ def init_roles(db: Session = Depends(get_db)):
     return {"message": "Default roles created successfully", "roles": [r.name for r in roles]}
 
 
+@router.post("/create-admin")
 def create_admin_user(request: CreateAdminRequest, db: Session = Depends(get_db)):
     """Create the first admin user if no users exist"""
     # Check if any users exist
