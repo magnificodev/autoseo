@@ -8,9 +8,10 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN pwd
 RUN ls -la
-RUN ls -la components/
-RUN ls -la components/ui/
+RUN find . -name "components" -type d
+RUN find . -name "badge.tsx" -type f
 RUN npm run build
 
 FROM node:20-alpine AS runner
