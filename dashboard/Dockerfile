@@ -29,6 +29,12 @@ RUN ls -la components/ || echo "components/ not found"
 RUN ls -la components/ui/ || echo "components/ui/ not found"
 RUN echo "=== DEBUG: Check tsconfig.json ==="
 RUN cat tsconfig.json | grep -A 5 "paths"
+RUN echo "=== DEBUG: Check next.config.js ==="
+RUN cat next.config.js
+RUN echo "=== DEBUG: Test alias resolution manually ==="
+RUN node -e "console.log(require('path').resolve('.'))"
+RUN echo "=== DEBUG: Check if badge.tsx exists ==="
+RUN find . -name "badge.tsx" -type f
 RUN npm run build
 
 FROM node:20-alpine AS runner
