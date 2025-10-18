@@ -111,3 +111,4 @@ docker-compose.yml
 nginx.conf
 .env.example
 ```
+# Trigger deployment
