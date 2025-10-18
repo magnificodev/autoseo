@@ -16,7 +16,7 @@ def test_register_and_login_and_content_flow(client):
 
     # create site
     r = client.post(
-        "/sites/",
+        "/api/sites/",
         json={
             "name": "S",
             "wp_url": "https://example.com",
@@ -29,7 +29,7 @@ def test_register_and_login_and_content_flow(client):
 
     # create content with unicode
     r = client.post(
-        "/content/",
+        "/api/content-queue/",
         json={"site_id": 1, "title": "Bài viết mẫu", "body": "Nội dung"},
         headers={"Authorization": f"Bearer {token}"},
     )
