@@ -8,6 +8,9 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN ls -la
+RUN ls -la components/
+RUN ls -la components/ui/
 RUN npm run build
 
 FROM node:20-alpine AS runner
