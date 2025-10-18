@@ -129,7 +129,7 @@ def create_admin_user(request: CreateAdminRequest, db: Session = Depends(get_db)
     # Create admin role if it doesn't exist
     admin_role = db.query(Role).filter(Role.name == "admin").first()
     if not admin_role:
-        admin_role = Role(name="admin", description="Administrator")
+        admin_role = Role(name="admin")
         db.add(admin_role)
         db.commit()
         db.refresh(admin_role)
