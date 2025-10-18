@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from src.api.deps.auth import get_current_user, get_db
-from src.api.middleware.permissions import require_admin, require_user_management_permission
+from src.api.middleware.permissions import require_admin, require_user_management_permission, require_permission
 from src.core.permissions import can_manage_user
 from src.database.models import User, Role
 
@@ -38,9 +38,8 @@ class AssignRoleIn(BaseModel):
 
 
 @router.get("/", response_model=List[UserOut])
-@require_admin
 def list_users(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission("users.view")),
     db: Session = Depends(get_db)
 ):
     """List all users with their roles"""
@@ -58,9 +57,8 @@ def list_users(
 
 
 @router.get("/roles", response_model=List[RoleOut])
-@require_admin
 def list_roles(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission("users.view")),
     db: Session = Depends(get_db)
 ):
     """List available roles"""
@@ -77,10 +75,9 @@ def list_roles(
 
 
 @router.post("/assign-role")
-@require_admin
 def assign_role(
     body: AssignRoleIn,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission("users.manage")),
     db: Session = Depends(get_db)
 ):
     """Assign role to user"""
@@ -118,10 +115,9 @@ def assign_role(
 
 
 @router.patch("/{user_id}/toggle-active")
-@require_admin
 def toggle_user_active(
     user_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission("users.manage")),
     db: Session = Depends(get_db)
 ):
     """Toggle user active status"""
