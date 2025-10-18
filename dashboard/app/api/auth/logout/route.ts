@@ -3,9 +3,9 @@ import { NextResponse } from 'next/server';
 export async function POST() {
     try {
         const response = NextResponse.json({ message: 'Đăng xuất thành công' });
-        
+
         // Clear auth cookie
-        response.cookies.set('auth_token', '', {
+        response.cookies.set('token', '', {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
@@ -15,9 +15,6 @@ export async function POST() {
         return response;
     } catch (error) {
         console.error('Logout error:', error);
-        return NextResponse.json(
-            { detail: 'Lỗi server' },
-            { status: 500 }
-        );
+        return NextResponse.json({ detail: 'Lỗi server' }, { status: 500 });
     }
 }

@@ -5,47 +5,35 @@ export async function POST(request: NextRequest) {
         const { email, password } = await request.json();
 
         if (!email || !password) {
-            return NextResponse.json(
-                { detail: 'Email và mật khẩu là bắt buộc' },
-                { status: 400 }
-            );
+            return NextResponse.json({ detail: 'Email và mật khẩu là bắt buộc' }, { status: 400 });
         }
 
-        // Forward to backend API
+        // Forward to backend API using form data
         const backendUrl = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
-        const response = await fetch(`${backendUrl}/api/auth/login`, {
+        const formData = new URLSearchParams();
+        formData.append('username', email);
+        formData.append('password', password);
+        
+        const response = await fetch(`${backendUrl}/auth/login-cookie`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: JSON.stringify({ email, password }),
+            body: formData,
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
+            const errorText = await response.text();
             return NextResponse.json(
-                { detail: errorData.detail || 'Đăng nhập thất bại' },
+                { detail: errorText || 'Đăng nhập thất bại' },
                 { status: response.status }
             );
         }
 
-        const data = await response.json();
-        
-        // Set httpOnly cookie
-        const cookieResponse = NextResponse.json(data);
-        cookieResponse.cookies.set('auth_token', data.access_token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 60 * 60 * 24 * 7, // 7 days
-        });
-
-        return cookieResponse;
+        // Backend sets cookie, just return success
+        return NextResponse.json({ success: true });
     } catch (error) {
         console.error('Login error:', error);
-        return NextResponse.json(
-            { detail: 'Lỗi server' },
-            { status: 500 }
-        );
+        return NextResponse.json({ detail: 'Lỗi server' }, { status: 500 });
     }
 }

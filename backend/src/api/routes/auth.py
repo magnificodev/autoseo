@@ -4,6 +4,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from src.api.deps.auth import get_current_user
 from jose import jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
@@ -102,6 +103,16 @@ def login_cookie(
         path="/",
     )
     return resp
+
+
+@router.get("/me")
+def get_current_user_info(current_user: User = Depends(get_current_user)):
+    return {
+        "id": current_user.id,
+        "email": current_user.email,
+        "name": current_user.email.split("@")[0],  # Use email prefix as name
+        "is_active": current_user.is_active
+    }
 
 
 @router.post("/logout")
