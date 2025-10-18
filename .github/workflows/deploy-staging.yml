@@ -151,9 +151,16 @@ jobs:
                       # Clean up old containers only (keep images for cache)
                       docker compose down || true
                       
-                      # Build and start containers with no cache to fix case sensitivity
+                      # Build and start containers with smart caching
                       docker compose pull || true
-                      docker compose build --pull --no-cache
+                      # Use cache for faster builds, but force rebuild if debugging
+                      if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.force_rebuild }}" = "true" ]; then
+                        echo "Force rebuild requested - using --no-cache"
+                        docker compose build --pull --no-cache
+                      else
+                        echo "Using cache for faster build"
+                        docker compose build --pull
+                      fi
                       docker compose up -d
                       # Ensure bot restarted with new token
                       docker compose up -d bot

@@ -1,0 +1,31 @@
+#!/bin/sh
+# Pre-commit hook to check file naming conventions
+
+echo "🔍 Checking file naming conventions..."
+
+# Check for UPPERCASE UI component files
+UPPERCASE_FILES=$(find dashboard/components/ui -name "[A-Z]*.tsx" -type f 2>/dev/null)
+
+if [ -n "$UPPERCASE_FILES" ]; then
+    echo "❌ ERROR: Found UPPERCASE UI component files:"
+    echo "$UPPERCASE_FILES"
+    echo ""
+    echo "Please rename to lowercase:"
+    echo "Example: git mv Button.tsx button.tsx"
+    exit 1
+fi
+
+# Check for relative imports in UI components
+RELATIVE_IMPORTS=$(find dashboard/app -name "*.tsx" -exec grep -l "../../components/ui/" {} \; 2>/dev/null)
+
+if [ -n "$RELATIVE_IMPORTS" ]; then
+    echo "❌ ERROR: Found relative imports for UI components:"
+    echo "$RELATIVE_IMPORTS"
+    echo ""
+    echo "Please use absolute imports with @ alias:"
+    echo "Example: import { Button } from '@/components/ui/button'"
+    exit 1
+fi
+
+echo "✅ File naming conventions check passed!"
+exit 0
