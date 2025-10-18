@@ -15,6 +15,7 @@ from src.api.routes import audit_logs as audit_logs_router
 from src.api.routes import scheduler as scheduler_router
 from src.api.routes import sites as sites_router
 from src.api.routes import users as users_router
+from src.api.routes import role_applications as role_applications_router
 from src.database.session import engine
 from src.core.settings import settings
 from src.core.logging import configure_json_logging
@@ -44,6 +45,7 @@ def create_app() -> FastAPI:
     app.include_router(admins_router.router)
     app.include_router(audit_logs_router.router)
     app.include_router(users_router.router)
+    app.include_router(role_applications_router.router)
 
     @app.get("/health")
     def health():

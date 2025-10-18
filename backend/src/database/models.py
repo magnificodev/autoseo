@@ -32,6 +32,25 @@ class User(Base):
     
     # Relationships
     role: Mapped["Role"] = relationship("Role", back_populates="users")
+    role_applications: Mapped[List["RoleApplication"]] = relationship("RoleApplication", back_populates="user")
+
+
+class RoleApplication(Base):
+    __tablename__ = "role_applications"
+    
+    id: int = Column(Integer, primary_key=True)
+    user_id: int = Column(Integer, ForeignKey("users.id"), nullable=False)
+    requested_role: str = Column(String(50), nullable=False)  # "manager" or "admin"
+    reason: str = Column(Text, nullable=True)  # User's reason for applying
+    status: str = Column(String(20), default="pending")  # pending, approved, rejected
+    reviewed_by: int = Column(Integer, ForeignKey("users.id"), nullable=True)  # Admin who reviewed
+    reviewed_at: datetime = Column(DateTime, nullable=True)
+    admin_notes: str = Column(Text, nullable=True)  # Admin's notes
+    created_at: datetime = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    user: Mapped["User"] = relationship("User", back_populates="role_applications", foreign_keys=[user_id])
+    reviewer: Mapped["User"] = relationship("User", foreign_keys=[reviewed_by])
 
 
 class Site(Base):
