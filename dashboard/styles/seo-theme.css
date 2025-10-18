@@ -1,0 +1,241 @@
+/* SEO Automation Theme - Minimalist + Gradient Accents */
+:root {
+    /* Base Colors - Professional & Clean */
+    --seo-bg: #f8fafc;
+    --seo-surface: #ffffff;
+    --seo-border: #e2e8f0;
+    --seo-text: #1e293b;
+    --seo-text-muted: #64748b;
+    --seo-text-light: #94a3b8;
+
+    /* SEO Brand Colors */
+    --seo-primary: #3b82f6; /* Blue - Trust, Professional */
+    --seo-success: #10b981; /* Green - Success, Growth */
+    --seo-warning: #f59e0b; /* Amber - Attention, Caution */
+    --seo-danger: #ef4444; /* Red - Error, Critical */
+    --seo-info: #06b6d4; /* Cyan - Information */
+
+    /* Gradient Accents for CTAs */
+    --seo-gradient-primary: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    --seo-gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    --seo-gradient-warning: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+
+    /* Shadows */
+    --seo-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --seo-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --seo-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --seo-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Base Components */
+.seo-card {
+    background: var(--seo-surface);
+    border: 1px solid var(--seo-border);
+    border-radius: 12px;
+    box-shadow: var(--seo-shadow);
+    transition: all 0.2s ease;
+}
+
+.seo-card:hover {
+    box-shadow: var(--seo-shadow-lg);
+    transform: translateY(-1px);
+}
+
+.seo-button {
+    background: var(--seo-surface);
+    border: 1px solid var(--seo-border);
+    border-radius: 8px;
+    color: var(--seo-text);
+    font-weight: 500;
+    transition: all 0.2s ease;
+    box-shadow: var(--seo-shadow-sm);
+}
+
+.seo-button:hover {
+    background: var(--seo-bg);
+    border-color: var(--seo-primary);
+    transform: translateY(-1px);
+    box-shadow: var(--seo-shadow);
+}
+
+/* Gradient CTA Buttons */
+.seo-button-primary {
+    background: var(--seo-gradient-primary);
+    border: none;
+    color: white;
+    font-weight: 600;
+    box-shadow: var(--seo-shadow);
+}
+
+.seo-button-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--seo-shadow-lg);
+    filter: brightness(1.05);
+}
+
+.seo-button-success {
+    background: var(--seo-gradient-success);
+    border: none;
+    color: white;
+    font-weight: 600;
+    box-shadow: var(--seo-shadow);
+}
+
+.seo-button-success:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--seo-shadow-lg);
+    filter: brightness(1.05);
+}
+
+/* Navigation */
+.seo-nav {
+    background: var(--seo-surface);
+    border-bottom: 1px solid var(--seo-border);
+    box-shadow: var(--seo-shadow-sm);
+}
+
+.seo-sidebar {
+    background: var(--seo-surface);
+    border-right: 1px solid var(--seo-border);
+}
+
+/* Input Fields */
+.seo-input {
+    background: var(--seo-surface);
+    border: 1px solid var(--seo-border);
+    border-radius: 8px;
+    color: var(--seo-text);
+    transition: all 0.2s ease;
+}
+
+.seo-input:focus {
+    border-color: var(--seo-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    outline: none;
+}
+
+/* Status Indicators */
+.seo-status-active {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--seo-success);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.seo-status-warning {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--seo-warning);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.seo-status-error {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--seo-danger);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* Metrics Cards */
+.seo-metric-card {
+    background: var(--seo-surface);
+    border: 1px solid var(--seo-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.2s ease;
+}
+
+.seo-metric-card:hover {
+    border-color: var(--seo-primary);
+    box-shadow: var(--seo-shadow-lg);
+}
+
+.seo-metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--seo-text);
+    line-height: 1;
+}
+
+.seo-metric-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--seo-text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.seo-metric-change {
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    margin-top: 0.5rem;
+}
+
+.seo-metric-change.positive {
+    color: var(--seo-success);
+}
+
+.seo-metric-change.negative {
+    color: var(--seo-danger);
+}
+
+/* Data Tables */
+.seo-table {
+    background: var(--seo-surface);
+    border: 1px solid var(--seo-border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.seo-table th {
+    background: var(--seo-bg);
+    color: var(--seo-text-muted);
+    font-weight: 600;
+    font-size: 0.875rem;
+    padding: 1rem;
+    border-bottom: 1px solid var(--seo-border);
+}
+
+.seo-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--seo-border);
+    color: var(--seo-text);
+}
+
+.seo-table tr:hover {
+    background: var(--seo-bg);
+}
+
+/* Background */
+.seo-bg {
+    background: var(--seo-bg);
+    min-height: 100vh;
+}
+
+/* Typography */
+.seo-text-primary {
+    color: var(--seo-text);
+}
+
+.seo-text-muted {
+    color: var(--seo-text-muted);
+}
+
+.seo-text-light {
+    color: var(--seo-text-light);
+}
+
+/* Spacing */
+.seo-spacing {
+    padding: 1.5rem;
+    margin: 1rem 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .seo-metric-value {
+        font-size: 1.5rem;
+    }
+
+    .seo-spacing {
+        padding: 1rem;
+    }
+}
