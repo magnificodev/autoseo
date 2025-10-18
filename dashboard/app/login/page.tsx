@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import React, { useState } from 'react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 
 export default function LoginPage() {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [email, setEmail] = useState('admin@autoseo.com');
+    const [password, setPassword] = useState('admin123');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const router = useRouter();
@@ -48,14 +48,20 @@ export default function LoginPage() {
                     <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
                         Đăng nhập vào Autoseo
                     </h2>
-                    <p className="mt-2 text-center text-sm text-gray-600">
-                        Quản lý SEO tự động
-                    </p>
+                    <p className="mt-2 text-center text-sm text-gray-600">Quản lý SEO tự động</p>
+                    <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                        <p className="text-xs text-blue-700 text-center">
+                            <strong>Test Account:</strong> admin@autoseo.com / admin123
+                        </p>
+                    </div>
                 </div>
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                     <div className="space-y-4">
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                            <label
+                                htmlFor="email"
+                                className="block text-sm font-medium text-gray-700"
+                            >
                                 Email
                             </label>
                             <Input
@@ -66,11 +72,14 @@ export default function LoginPage() {
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                placeholder="Nhập email của bạn"
+                                placeholder="admin@autoseo.com"
                             />
                         </div>
                         <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                            <label
+                                htmlFor="password"
+                                className="block text-sm font-medium text-gray-700"
+                            >
                                 Mật khẩu
                             </label>
                             <Input
@@ -81,23 +90,15 @@ export default function LoginPage() {
                                 required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                placeholder="Nhập mật khẩu"
+                                placeholder="admin123"
                             />
                         </div>
                     </div>
 
-                    {error && (
-                        <div className="text-red-600 text-sm text-center">
-                            {error}
-                        </div>
-                    )}
+                    {error && <div className="text-red-600 text-sm text-center">{error}</div>}
 
                     <div>
-                        <Button
-                            type="submit"
-                            disabled={isLoading}
-                            className="w-full"
-                        >
+                        <Button type="submit" disabled={isLoading} className="w-full">
                             {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
                         </Button>
                     </div>
