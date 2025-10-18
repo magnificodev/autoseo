@@ -2,9 +2,16 @@
 
 import React from 'react';
 import useSWR from 'swr';
-import Button from '../../components/ui/Button';
-import Input from '../../components/ui/Input';
 import Badge from '../../components/ui/Badge';
+import Button from '../../components/ui/Button';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '../../components/ui/Dialog';
+import Input from '../../components/ui/Input';
 import Skeleton from '../../components/ui/Skeleton';
 import {
     Table,
@@ -14,13 +21,6 @@ import {
     TableHeader,
     TableRow,
 } from '../../components/ui/Table';
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '../../components/ui/Dialog';
 
 type Site = {
     id: number;
@@ -150,7 +150,10 @@ export default function SitesPage() {
                                                         defaultChecked={s.is_auto_enabled}
                                                         className="rounded"
                                                     />
-                                                    <label htmlFor="auto-enabled" className="text-sm">
+                                                    <label
+                                                        htmlFor="auto-enabled"
+                                                        className="text-sm"
+                                                    >
                                                         Tự động tạo nội dung
                                                     </label>
                                                 </div>

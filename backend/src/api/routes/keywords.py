@@ -163,7 +163,7 @@ def get_keyword(
     keyword = db.get(Keyword, keyword_id)
     if not keyword:
         raise HTTPException(status_code=404, detail="Keyword not found")
-    
+
     return KeywordOut(
         id=keyword.id,
         keyword=keyword.keyword,
@@ -192,22 +192,22 @@ def update_keyword_full(
     keyword = db.get(Keyword, keyword_id)
     if not keyword:
         raise HTTPException(status_code=404, detail="Keyword not found")
-    
+
     # Verify site exists
     site = db.get(Site, body.site_id)
     if not site:
         raise HTTPException(status_code=404, detail="Site not found")
-    
+
     # Update all fields
     keyword.site_id = body.site_id
     keyword.keyword = body.keyword
     keyword.category = body.category
     keyword.status = body.status
-    
+
     db.add(keyword)
     db.commit()
     db.refresh(keyword)
-    
+
     return KeywordOut(
         id=keyword.id,
         keyword=keyword.keyword,

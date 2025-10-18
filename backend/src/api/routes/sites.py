@@ -73,8 +73,9 @@ def get_site(
     site = db.get(Site, site_id)
     if not site:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=404, detail="Site not found")
-    
+
     return SiteOut.model_validate(
         {
             "name": site.name,
@@ -100,18 +101,19 @@ def update_site_full(
     site = db.get(Site, site_id)
     if not site:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=404, detail="Site not found")
-    
+
     # Update all fields
     site.name = body.name
     site.wp_url = body.wp_url
     site.wp_username = body.wp_username
     site.wp_password_enc = body.wp_password_enc
-    
+
     db.add(site)
     db.commit()
     db.refresh(site)
-    
+
     return SiteOut.model_validate(
         {
             "name": site.name,
@@ -179,8 +181,9 @@ def delete_site(
     site = db.get(Site, site_id)
     if not site:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=404, detail="Site not found")
-    
+
     db.delete(site)
     db.commit()
     return {"message": "Site deleted successfully"}
@@ -192,13 +195,12 @@ class TestConnectionOut(BaseModel):
 
 @router.post("/{site_id}/test-connection", response_model=TestConnectionOut)
 def test_site_connection(
-    site_id: int,
-    db: Session = Depends(get_db),
-    user=Depends(get_current_user)
+    site_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)
 ):
     site = db.get(Site, site_id)
     if not site:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=404, detail="Site not found")
     # Normalize URL to include scheme
     wp_url = site.wp_url.strip()

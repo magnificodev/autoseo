@@ -1,10 +1,10 @@
 import clsx from 'classnames';
 import * as React from 'react';
 
- type InputSize = 'sm' | 'md' | 'lg';
- type InputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> & {
-     uiSize?: InputSize;
- };
+type InputSize = 'sm' | 'md' | 'lg';
+type InputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> & {
+    uiSize?: InputSize;
+};
 
 const sizeClasses: Record<InputSize, string> = {
     sm: 'h-8 px-3 text-sm',
@@ -12,7 +12,7 @@ const sizeClasses: Record<InputSize, string> = {
     lg: 'h-12 px-4 text-base',
 };
 
- export function Input({ className, uiSize = 'md', ...props }: InputProps) {
+export function Input({ className, uiSize = 'md', ...props }: InputProps) {
     return (
         <input
             className={clsx(

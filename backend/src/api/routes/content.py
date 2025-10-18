@@ -107,7 +107,7 @@ def get_content(
     content = db.get(ContentQueue, content_id)
     if not content:
         raise HTTPException(status_code=404, detail="Content not found")
-    
+
     return ContentOut(
         id=content.id,
         title=content.title,
@@ -134,17 +134,17 @@ def update_content_full(
     content = db.get(ContentQueue, content_id)
     if not content:
         raise HTTPException(status_code=404, detail="Content not found")
-    
+
     # Update all fields
     content.site_id = body.site_id
     content.title = body.title
     content.body = body.body
     content.status = body.status
-    
+
     db.add(content)
     db.commit()
     db.refresh(content)
-    
+
     return ContentOut(
         id=content.id,
         title=content.title,
@@ -171,17 +171,17 @@ def update_content(
     content = db.get(ContentQueue, content_id)
     if not content:
         raise HTTPException(status_code=404, detail="Content not found")
-    
+
     # Update only provided fields
     update_data = body.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         if value is not None:
             setattr(content, field, value)
-    
+
     db.add(content)
     db.commit()
     db.refresh(content)
-    
+
     return ContentOut(
         id=content.id,
         title=content.title,
@@ -207,7 +207,7 @@ def delete_content(
     content = db.get(ContentQueue, content_id)
     if not content:
         raise HTTPException(status_code=404, detail="Content not found")
-    
+
     db.delete(content)
     db.commit()
     return {"message": "Content deleted successfully"}
@@ -292,15 +292,15 @@ def publish_content(
     content = db.get(ContentQueue, content_id)
     if not content:
         raise HTTPException(status_code=404, detail="Content not found")
-    
+
     site: Site | None = db.get(Site, content.site_id)
     if not site:
         raise HTTPException(status_code=404, detail="site_not_found")
-    
+
     report = _checklist(title=content.title or "", body=content.body or "")
     if not report.get("passed"):
         raise HTTPException(status_code=400, detail={"checklist_failed": report})
-    
+
     creds = WordPressCredentials(
         base_url=site.wp_url,
         username=site.wp_username,
@@ -315,7 +315,7 @@ def publish_content(
         content.status = "published"
         db.add(content)
         db.commit()
-        
+
         return {
             "ok": True,
             "post_id": result.get("id"),

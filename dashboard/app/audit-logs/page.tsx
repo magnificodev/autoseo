@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -42,12 +42,12 @@ export default function AuditLogsPage() {
     const [downloading, setDownloading] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  async function safeJson(res: Response) {
-    const ct = res.headers.get('content-type') || ''
-    if (ct.includes('application/json')) return res.json()
-    const text = await res.text()
-    throw new Error(text.slice(0, 300))
-  }
+    async function safeJson(res: Response) {
+        const ct = res.headers.get('content-type') || '';
+        if (ct.includes('application/json')) return res.json();
+        const text = await res.text();
+        throw new Error(text.slice(0, 300));
+    }
 
     async function loadLogs() {
         try {
@@ -58,7 +58,9 @@ export default function AuditLogsPage() {
             if (action.trim()) params.set('action', action.trim());
             if (start.trim()) params.set('start', start.trim());
             if (end.trim()) params.set('end', end.trim());
-            const res = await fetch(`/api/audit-logs/?${params.toString()}`, { credentials: 'include' });
+            const res = await fetch(`/api/audit-logs/?${params.toString()}`, {
+                credentials: 'include',
+            });
             if (!res.ok) throw new Error(await res.text());
             const data = await safeJson(res);
             setLogs(data);
@@ -69,22 +71,25 @@ export default function AuditLogsPage() {
         }
     }
 
-  useEffect(() => {
-    loadLogs()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    useEffect(() => {
+        loadLogs();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     return (
         <div className="space-y-4">
             <h1 className="text-2xl font-bold">Audit Logs</h1>
-            
+
             <form
-                onSubmit={(e) => { e.preventDefault(); loadLogs(); }}
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    loadLogs();
+                }}
                 className="flex items-center gap-2 flex-wrap"
             >
-                <select 
-                    value={action} 
-                    onChange={(e) => setAction(e.target.value)} 
+                <select
+                    value={action}
+                    onChange={(e) => setAction(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-md text-sm"
                 >
                     <option value="">Tất cả hành động</option>
@@ -95,15 +100,15 @@ export default function AuditLogsPage() {
                     <option value="update">Cập nhật</option>
                     <option value="delete">Xóa</option>
                 </select>
-                <Input 
-                    type="datetime-local" 
-                    value={start} 
+                <Input
+                    type="datetime-local"
+                    value={start}
                     onChange={(e) => setStart(e.target.value)}
                     placeholder="Từ ngày"
                 />
-                <Input 
-                    type="datetime-local" 
-                    value={end} 
+                <Input
+                    type="datetime-local"
+                    value={end}
                     onChange={(e) => setEnd(e.target.value)}
                     placeholder="Đến ngày"
                 />
@@ -122,11 +127,21 @@ export default function AuditLogsPage() {
                             if (action.trim()) params.set('action', action.trim());
                             if (start.trim()) params.set('start', start.trim());
                             if (end.trim()) params.set('end', end.trim());
-                            const res = await fetch(`/api/audit-logs/?${params.toString()}`, { credentials: 'include' });
+                            const res = await fetch(`/api/audit-logs/?${params.toString()}`, {
+                                credentials: 'include',
+                            });
                             if (!res.ok) throw new Error(await res.text());
                             const data: AuditLog[] = await safeJson(res);
 
-                            const headers = ['id','actor_user_id','action','target_type','target_id','note','created_at'];
+                            const headers = [
+                                'id',
+                                'actor_user_id',
+                                'action',
+                                'target_type',
+                                'target_id',
+                                'note',
+                                'created_at',
+                            ];
                             const escape = (v: any) => {
                                 const s = v === null || v === undefined ? '' : String(v);
                                 if (s.includes('"') || s.includes(',') || s.includes('\n')) {
@@ -134,8 +149,19 @@ export default function AuditLogsPage() {
                                 }
                                 return s;
                             };
-                            const rows = data.map(r => [r.id, r.actor_user_id, r.action, r.target_type, r.target_id, r.note ?? '', r.created_at ?? '']);
-                            const csv = [headers.join(','), ...rows.map(row => row.map(escape).join(','))].join('\n');
+                            const rows = data.map((r) => [
+                                r.id,
+                                r.actor_user_id,
+                                r.action,
+                                r.target_type,
+                                r.target_id,
+                                r.note ?? '',
+                                r.created_at ?? '',
+                            ]);
+                            const csv = [
+                                headers.join(','),
+                                ...rows.map((row) => row.map(escape).join(',')),
+                            ].join('\n');
                             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
                             const url = URL.createObjectURL(blob);
                             const a = document.createElement('a');
@@ -155,9 +181,9 @@ export default function AuditLogsPage() {
                     {downloading ? 'Đang xuất...' : 'Xuất CSV'}
                 </Button>
             </form>
-            
+
             {error && <div className="text-red-600 text-sm">{error}</div>}
-            
+
             <div className="overflow-x-auto">
                 <Table>
                     <TableHeader>
@@ -194,16 +220,26 @@ export default function AuditLogsPage() {
                                 <TableCell className="font-medium">#{l.id}</TableCell>
                                 <TableCell>User #{l.actor_user_id}</TableCell>
                                 <TableCell>
-                                    <Badge variant={actionConfig[l.action as keyof typeof actionConfig]?.variant || 'secondary'}>
-                                        {actionConfig[l.action as keyof typeof actionConfig]?.label || l.action}
+                                    <Badge
+                                        variant={
+                                            actionConfig[l.action as keyof typeof actionConfig]
+                                                ?.variant || 'secondary'
+                                        }
+                                    >
+                                        {actionConfig[l.action as keyof typeof actionConfig]
+                                            ?.label || l.action}
                                     </Badge>
                                 </TableCell>
-                                <TableCell>{l.target_type}#{l.target_id}</TableCell>
+                                <TableCell>
+                                    {l.target_type}#{l.target_id}
+                                </TableCell>
                                 <TableCell className="max-w-xs truncate" title={l.note || ''}>
                                     {l.note || '-'}
                                 </TableCell>
                                 <TableCell>
-                                    {l.created_at ? new Date(l.created_at).toLocaleString('vi-VN') : '-'}
+                                    {l.created_at
+                                        ? new Date(l.created_at).toLocaleString('vi-VN')
+                                        : '-'}
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -213,5 +249,3 @@ export default function AuditLogsPage() {
         </div>
     );
 }
-
-

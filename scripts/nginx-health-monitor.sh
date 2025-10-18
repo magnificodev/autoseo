@@ -20,25 +20,25 @@ check_nginx_health() {
         log_message "ERROR: Nginx container is not running"
         return 1
     fi
-    
+
     # Check if nginx is responding
     if ! curl -sf http://localhost/health >/dev/null 2>&1; then
         log_message "ERROR: Nginx health check failed"
         return 1
     fi
-    
+
     # Check if nginx can reach backend
     if ! docker exec "$NGINX_CONTAINER" wget -qO- http://backend:8000/health >/dev/null 2>&1; then
         log_message "ERROR: Nginx cannot reach backend"
         return 1
     fi
-    
+
     # Check if nginx can reach dashboard
     if ! docker exec "$NGINX_CONTAINER" wget -qO- http://dashboard:3000 >/dev/null 2>&1; then
         log_message "ERROR: Nginx cannot reach dashboard"
         return 1
     fi
-    
+
     return 0
 }
 
@@ -46,7 +46,7 @@ restart_nginx() {
     log_message "INFO: Restarting nginx container"
     docker restart "$NGINX_CONTAINER"
     sleep 10
-    
+
     if check_nginx_health; then
         log_message "INFO: Nginx restart successful"
         failure_count=0
@@ -67,12 +67,12 @@ while true; do
     else
         failure_count=$((failure_count + 1))
         log_message "WARNING: Nginx health check failed ($failure_count/$MAX_FAILURES)"
-        
+
         if [ $failure_count -ge $MAX_FAILURES ]; then
             log_message "ERROR: Max failures reached, restarting nginx"
             restart_nginx
         fi
     fi
-    
+
     sleep $CHECK_INTERVAL
 done

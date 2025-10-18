@@ -1,24 +1,19 @@
-import type { Config } from 'tailwindcss'
+import type { Config } from 'tailwindcss';
 
 const config: Config = {
-  content: [
-    './app/**/*.{ts,tsx}',
-    './components/**/*.{ts,tsx}',
-  ],
-  theme: {
-    container: {
-      center: true,
-      padding: '1rem',
-      screens: {
-        '2xl': '1400px',
-      },
+    content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}'],
+    theme: {
+        container: {
+            center: true,
+            padding: '1rem',
+            screens: {
+                '2xl': '1400px',
+            },
+        },
+        extend: {},
     },
-    extend: {},
-  },
-  darkMode: ['class'],
-  plugins: [],
-}
+    darkMode: ['class'],
+    plugins: [],
+};
 
-export default config
-
-
+export default config;

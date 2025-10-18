@@ -18,29 +18,29 @@ def quick_delete_test():
     db = SessionLocal()
     try:
         # Tìm và xóa tất cả content có "Test" trong title
-        test_contents = db.query(ContentQueue).filter(
-            ContentQueue.title.like("%Test%")
-        ).all()
-        
+        test_contents = (
+            db.query(ContentQueue).filter(ContentQueue.title.like("%Test%")).all()
+        )
+
         if not test_contents:
             print("ℹ️ Không tìm thấy test content nào.")
             return
-        
+
         print(f"🔍 Tìm thấy {len(test_contents)} test content:")
         for content in test_contents:
             print(f"  - #{content.id}: {content.title[:50]}...")
-        
+
         # Xóa tất cả
         for content in test_contents:
             db.delete(content)
-        
+
         db.commit()
         print(f"✅ Đã xóa thành công {len(test_contents)} test content.")
-        
+
         # Thống kê còn lại
         remaining = db.query(ContentQueue).count()
         print(f"📊 Còn lại {remaining} content trong database.")
-        
+
     except Exception as e:
         print(f"❌ Lỗi: {e}")
         db.rollback()

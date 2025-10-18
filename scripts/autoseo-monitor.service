@@ -1,0 +1,21 @@
+[Unit]
+Description=AutoSEO Health Monitor
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=mauticuser
+Group=mauticuser
+WorkingDirectory=/home/mauticuser/autoseo
+ExecStart=/home/mauticuser/autoseo/scripts/autoseo-auto-recovery.sh
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Environment
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+[Install]
+WantedBy=multi-user.target

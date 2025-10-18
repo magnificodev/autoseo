@@ -68,19 +68,15 @@ export default function KeywordsPage() {
         {
             onError: (err) => {
                 console.error('Keywords API error:', err);
-            }
+            },
         }
     );
 
-    const { data: sites } = useSWR<{ id: number; name: string }[]>(
-        '/api/sites/', 
-        fetcher,
-        {
-            onError: (err) => {
-                console.error('Sites API error:', err);
-            }
-        }
-    );
+    const { data: sites } = useSWR<{ id: number; name: string }[]>('/api/sites/', fetcher, {
+        onError: (err) => {
+            console.error('Sites API error:', err);
+        },
+    });
 
     function next() {
         setPage((p) => p + 1);
