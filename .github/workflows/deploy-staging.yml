@@ -143,10 +143,11 @@ jobs:
                       # Clean up old containers and images
                       docker compose down || true
                       docker system prune -f || true
+                      docker builder prune -f || true
                       
                       # Build and start containers
                       docker compose pull || true
-                      docker compose build --no-cache
+                      docker compose build --no-cache --pull
                       docker compose up -d
                       # Ensure bot restarted with new token
                       docker compose up -d bot
