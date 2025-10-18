@@ -32,6 +32,8 @@ RUN echo "=== DEBUG: Try to create components directory if missing ==="
 RUN mkdir -p components/ui || echo "Cannot create components/ui"
 RUN echo "=== DEBUG: Check if we can access components/ui after mkdir ==="
 RUN ls -la components/ui/ 2>/dev/null || echo "Still cannot list components/ui/"
+RUN echo "=== DEBUG: Check if we can find any .tsx files ==="
+RUN find . -name "*.tsx" -type f | head -10
 RUN npm run build
 
 FROM node:20-alpine AS runner
