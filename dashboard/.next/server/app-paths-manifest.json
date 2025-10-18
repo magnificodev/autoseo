@@ -1,10 +1,10 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/api/auth/login/route": "app/api/auth/login/route.js",
   "/admins/page": "app/admins/page.js",
+  "/api/auth/login/route": "app/api/auth/login/route.js",
   "/api/auth/logout/route": "app/api/auth/logout/route.js",
-  "/api/auth/me/route": "app/api/auth/me/route.js",
   "/audit-logs/page": "app/audit-logs/page.js",
+  "/api/auth/me/route": "app/api/auth/me/route.js",
   "/content-queue/page": "app/content-queue/page.js",
   "/content/page": "app/content/page.js",
   "/keywords/page": "app/keywords/page.js",
