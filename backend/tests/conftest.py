@@ -25,6 +25,8 @@ def client():
 
 @pytest.fixture()
 def sqlite_db():
+    # Clean database before each test
+    Base.metadata.drop_all(bind=engine)
     # Ensure tables exist for the SQLite test database
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
@@ -32,5 +34,5 @@ def sqlite_db():
         yield db
     finally:
         db.close()
-        # Optional cleanup between tests: drop all to keep isolation lightweight
+        # Clean up after test
         Base.metadata.drop_all(bind=engine)

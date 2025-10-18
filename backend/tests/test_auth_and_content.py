@@ -1,4 +1,4 @@
-def test_register_and_login_and_content_flow(client):
+def test_register_and_login_and_content_flow(client, sqlite_db):
     # register
     r = client.post(
         "/api/auth/register", 
