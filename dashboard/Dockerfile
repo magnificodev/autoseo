@@ -35,6 +35,13 @@ RUN echo "=== DEBUG: Test alias resolution manually ==="
 RUN node -e "console.log(require('path').resolve('.'))"
 RUN echo "=== DEBUG: Check if badge.tsx exists ==="
 RUN find . -name "badge.tsx" -type f
+RUN echo "=== DEBUG: Check current directory structure ==="
+RUN pwd
+RUN ls -la
+RUN echo "=== DEBUG: Check if components directory exists ==="
+RUN test -d components && echo "components directory exists" || echo "components directory NOT FOUND"
+RUN echo "=== DEBUG: Check if components/ui directory exists ==="
+RUN test -d components/ui && echo "components/ui directory exists" || echo "components/ui directory NOT FOUND"
 RUN npm run build
 
 FROM node:20-alpine AS runner
