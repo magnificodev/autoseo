@@ -50,7 +50,7 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/20 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
             <div className="w-full max-w-md space-y-6">
                 {/* Logo */}
                 <div className="text-center">
@@ -60,21 +60,23 @@ export default function LoginPage() {
                         </div>
                         <div>
                             <span className="text-2xl font-bold text-foreground">Autoseo</span>
-                            <p className="text-sm text-muted-foreground">SEO Automation</p>
+                            <p className="text-sm text-muted-foreground">SEO Automation Platform</p>
                         </div>
                     </div>
                 </div>
 
                 {/* Login Form */}
-                <Card>
-                    <CardHeader className="text-center">
-                        <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
+                <Card className="border shadow-sm">
+                    <CardHeader className="text-center space-y-2">
+                        <CardTitle className="text-2xl font-semibold">Welcome back</CardTitle>
                         <CardDescription>Sign in to your account to continue</CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="space-y-6">
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
+                                <Label htmlFor="email" className="text-sm font-medium">
+                                    Email address
+                                </Label>
                                 <Input
                                     id="email"
                                     name="email"
@@ -85,11 +87,14 @@ export default function LoginPage() {
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="Enter your email"
                                     disabled={isLoading}
+                                    className="h-11"
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="password">Password</Label>
+                                <Label htmlFor="password" className="text-sm font-medium">
+                                    Password
+                                </Label>
                                 <div className="relative">
                                     <Input
                                         id="password"
@@ -101,11 +106,12 @@ export default function LoginPage() {
                                         onChange={(e) => setPassword(e.target.value)}
                                         placeholder="Enter your password"
                                         disabled={isLoading}
+                                        className="h-11 pr-10"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute inset-y-0 right-0 pr-3 flex items-center justify-center text-muted-foreground hover:text-foreground"
+                                        className="absolute inset-y-0 right-0 pr-3 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
                                         disabled={isLoading}
                                     >
                                         {showPassword ? (
@@ -117,33 +123,43 @@ export default function LoginPage() {
                                 </div>
                             </div>
 
-
                             {error && (
                                 <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-md text-sm">
                                     {error}
                                 </div>
                             )}
 
-                            <Button type="submit" className="w-full" disabled={isLoading}>
+                            <Button type="submit" className="w-full h-11" disabled={isLoading}>
                                 {isLoading ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                         Signing in...
                                     </>
                                 ) : (
-                                    'Sign In'
+                                    'Sign in'
                                 )}
                             </Button>
                         </form>
 
-                        <div className="mt-6 text-center">
+                        <div className="relative">
+                            <div className="absolute inset-0 flex items-center">
+                                <span className="w-full border-t" />
+                            </div>
+                            <div className="relative flex justify-center text-xs uppercase">
+                                <span className="bg-background px-2 text-muted-foreground">
+                                    Or continue with
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="text-center">
                             <p className="text-sm text-muted-foreground">
                                 Don't have an account?{' '}
                                 <Link
                                     href="/register"
-                                    className="text-primary hover:underline font-medium"
+                                    className="text-primary hover:underline font-medium transition-colors"
                                 >
-                                    Sign up
+                                    Create account
                                 </Link>
                             </p>
                         </div>

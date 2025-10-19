@@ -32,29 +32,28 @@ export default function RegisterPage() {
             return;
         }
 
+        if (password.length < 6) {
+            setError('Password must be at least 6 characters long');
+            setIsLoading(false);
+            return;
+        }
+
         if (password !== confirmPassword) {
             setError('Passwords do not match');
             setIsLoading(false);
             return;
         }
 
-        if (password.length < 6) {
-            setError('Password must be at least 6 characters');
-            setIsLoading(false);
-            return;
-        }
-
         try {
-            const formData = new URLSearchParams();
-            formData.append('email', email);
-            formData.append('password', password);
-
             const response = await fetch('/api/auth/register', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Type': 'application/json',
                 },
-                body: formData,
+                body: JSON.stringify({
+                    email,
+                    password,
+                }),
             });
 
             if (response.ok) {
@@ -75,31 +74,42 @@ export default function RegisterPage() {
 
     if (success) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/20 p-4">
-                <Card className="w-full max-w-md">
-                    <CardContent className="pt-6">
-                        <div className="text-center">
-                            <div className="mx-auto w-12 h-12 bg-green-100 dark:bg-green-950/20 rounded-full flex items-center justify-center mb-4">
-                                <CheckCircle className="w-6 h-6 text-green-600" />
+            <div className="min-h-screen flex items-center justify-center bg-background p-4">
+                <div className="w-full max-w-md space-y-6">
+                    <div className="text-center">
+                        <div className="flex items-center justify-center space-x-3 mb-4">
+                            <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center">
+                                <span className="text-primary-foreground font-bold text-lg">A</span>
                             </div>
-                            <h2 className="text-xl font-semibold text-foreground mb-2">
-                                Registration successful!
-                            </h2>
-                            <p className="text-muted-foreground mb-4">
-                                Your account has been created with Viewer permissions.
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                                Redirecting to login page...
-                            </p>
+                            <div>
+                                <span className="text-2xl font-bold text-foreground">Autoseo</span>
+                                <p className="text-sm text-muted-foreground">SEO Automation Platform</p>
+                            </div>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+
+                    <Card className="border shadow-sm">
+                        <CardContent className="pt-6">
+                            <div className="text-center space-y-4">
+                                <div className="mx-auto w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
+                                    <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-semibold">Account created successfully!</h3>
+                                    <p className="text-sm text-muted-foreground mt-1">
+                                        Redirecting you to the login page...
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/20 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
             <div className="w-full max-w-md space-y-6">
                 {/* Logo */}
                 <div className="text-center">
@@ -109,32 +119,34 @@ export default function RegisterPage() {
                         </div>
                         <div>
                             <span className="text-2xl font-bold text-foreground">Autoseo</span>
-                            <p className="text-sm text-muted-foreground">SEO Automation</p>
+                            <p className="text-sm text-muted-foreground">SEO Automation Platform</p>
                         </div>
                     </div>
                 </div>
 
                 {/* Register Form */}
-                <Card>
-                    <CardHeader className="text-center">
-                        <CardTitle className="text-2xl font-bold">Create account</CardTitle>
+                <Card className="border shadow-sm">
+                    <CardHeader className="text-center space-y-2">
+                        <CardTitle className="text-2xl font-semibold">Create account</CardTitle>
                         <CardDescription>
                             Sign up for your Autoseo account to get started
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="space-y-6">
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
+                                <Label htmlFor="email" className="text-sm font-medium">
+                                    Email address
+                                </Label>
                                 <div className="relative">
-                                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                     <Input
                                         id="email"
                                         type="email"
-                                        placeholder="your@email.com"
+                                        placeholder="Enter your email"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
-                                        className="pl-10"
+                                        className="pl-10 h-11"
                                         required
                                         disabled={isLoading}
                                     />
@@ -142,23 +154,25 @@ export default function RegisterPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="password">Password</Label>
+                                <Label htmlFor="password" className="text-sm font-medium">
+                                    Password
+                                </Label>
                                 <div className="relative">
-                                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                     <Input
                                         id="password"
                                         type={showPassword ? 'text' : 'password'}
-                                        placeholder="Password (at least 6 characters)"
+                                        placeholder="Create a password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="pl-10 pr-10"
+                                        className="pl-10 pr-10 h-11"
                                         required
                                         disabled={isLoading}
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-3 h-4 w-4 text-muted-foreground hover:text-foreground flex items-center justify-center"
+                                        className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                                         disabled={isLoading}
                                     >
                                         {showPassword ? (
@@ -171,23 +185,25 @@ export default function RegisterPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                                <Label htmlFor="confirmPassword" className="text-sm font-medium">
+                                    Confirm password
+                                </Label>
                                 <div className="relative">
-                                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                     <Input
                                         id="confirmPassword"
                                         type={showConfirmPassword ? 'text' : 'password'}
-                                        placeholder="Confirm password"
+                                        placeholder="Confirm your password"
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
-                                        className="pl-10 pr-10"
+                                        className="pl-10 pr-10 h-11"
                                         required
                                         disabled={isLoading}
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                        className="absolute right-3 top-3 h-4 w-4 text-muted-foreground hover:text-foreground flex items-center justify-center"
+                                        className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                                         disabled={isLoading}
                                     >
                                         {showConfirmPassword ? (
@@ -205,43 +221,39 @@ export default function RegisterPage() {
                                 </div>
                             )}
 
-                            <Button type="submit" className="w-full" disabled={isLoading}>
+                            <Button type="submit" className="w-full h-11" disabled={isLoading}>
                                 {isLoading ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                         Creating account...
                                     </>
                                 ) : (
-                                    'Create Account'
+                                    'Create account'
                                 )}
                             </Button>
                         </form>
 
-                        <div className="mt-6 text-center">
+                        <div className="relative">
+                            <div className="absolute inset-0 flex items-center">
+                                <span className="w-full border-t" />
+                            </div>
+                            <div className="relative flex justify-center text-xs uppercase">
+                                <span className="bg-background px-2 text-muted-foreground">
+                                    Already have an account?
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="text-center">
                             <p className="text-sm text-muted-foreground">
                                 Already have an account?{' '}
                                 <Link
                                     href="/login"
-                                    className="text-primary hover:underline font-medium"
+                                    className="text-primary hover:underline font-medium transition-colors"
                                 >
                                     Sign in
                                 </Link>
                             </p>
-                        </div>
-
-                        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                            <div className="flex items-start">
-                                <User className="h-4 w-4 text-blue-600 mt-0.5 mr-2" />
-                                <div className="text-sm text-blue-800 dark:text-blue-200">
-                                    <p className="font-medium">Account Information:</p>
-                                    <p>
-                                        • New accounts start with <strong>Viewer</strong>{' '}
-                                        permissions
-                                    </p>
-                                    <p>• Can view dashboard and audit logs only</p>
-                                    <p>• Admin can upgrade permissions later</p>
-                                </div>
-                            </div>
                         </div>
                     </CardContent>
                 </Card>
