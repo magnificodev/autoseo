@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -15,6 +16,7 @@ export default function LoginPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [remember, setRemember] = useState(false);
     const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -23,15 +25,16 @@ export default function LoginPage() {
         setError('');
 
         try {
-            const response = await fetch('/api/auth/login-cookie', {
+            const response = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Type': 'application/json',
                 },
                 credentials: 'include',
-                body: new URLSearchParams({
-                    username: email,
-                    password: password,
+                body: JSON.stringify({
+                    email,
+                    password,
+                    remember,
                 }),
             });
 
@@ -120,6 +123,13 @@ export default function LoginPage() {
                                             <Eye className="h-4 w-4" />
                                         )}
                                     </button>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="remember" checked={remember} onCheckedChange={(v) => setRemember(Boolean(v))} />
+                                    <Label htmlFor="remember" className="text-sm">Remember me</Label>
                                 </div>
                             </div>
 

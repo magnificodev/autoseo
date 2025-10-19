@@ -1,32 +1,37 @@
 'use client';
 
-import { ActivityTable } from '@/components/common/activity-table';
-import { EmptyState } from '@/components/common/empty-state';
 import { FilterBar } from '@/components/common/filter-bar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-    Users, 
-    UserPlus, 
-    Shield, 
-    Mail, 
-    Calendar,
-    MoreHorizontal,
-    Edit,
-    Trash2,
-    Eye
-} from 'lucide-react';
-import { useEffect, useState } from 'react';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import {
+    Calendar,
+    Edit,
+    Eye,
+    Mail,
+    MoreHorizontal,
+    Shield,
+    Trash2,
+    UserPlus,
+    Users,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface User {
     id: number;
@@ -104,7 +109,12 @@ export default function UsersPage() {
     const getInitials = (name?: string, fullName?: string, email?: string) => {
         const displayName = fullName || name;
         if (displayName) {
-            return displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+            return displayName
+                .split(' ')
+                .map((n) => n[0])
+                .join('')
+                .toUpperCase()
+                .slice(0, 2);
         }
         if (email) {
             return email.slice(0, 2).toUpperCase();
@@ -191,9 +201,7 @@ export default function UsersPage() {
             <div className="flex items-center justify-between">
                 <div className="space-y-1">
                     <h1 className="text-3xl font-semibold tracking-tight">Users</h1>
-                    <p className="text-muted-foreground">
-                        Manage user accounts and permissions
-                    </p>
+                    <p className="text-muted-foreground">Manage user accounts and permissions</p>
                 </div>
                 <Button className="flex items-center space-x-2">
                     <UserPlus className="h-4 w-4" />
@@ -205,7 +213,9 @@ export default function UsersPage() {
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 <Card className="border shadow-sm">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                            Total Users
+                        </CardTitle>
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -216,33 +226,45 @@ export default function UsersPage() {
 
                 <Card className="border shadow-sm">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Active Users</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                            Active Users
+                        </CardTitle>
                         <Shield className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{users.filter(u => u.is_active).length}</div>
+                        <div className="text-2xl font-bold">
+                            {users.filter((u) => u.is_active).length}
+                        </div>
                         <p className="text-xs text-muted-foreground">Currently online</p>
                     </CardContent>
                 </Card>
 
                 <Card className="border shadow-sm">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Admins</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                            Admins
+                        </CardTitle>
                         <Shield className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{users.filter(u => u.role?.name === 'admin').length}</div>
+                        <div className="text-2xl font-bold">
+                            {users.filter((u) => u.role?.name === 'admin').length}
+                        </div>
                         <p className="text-xs text-muted-foreground">Administrators</p>
                     </CardContent>
                 </Card>
 
                 <Card className="border shadow-sm">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Managers</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                            Managers
+                        </CardTitle>
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{users.filter(u => u.role?.name === 'manager').length}</div>
+                        <div className="text-2xl font-bold">
+                            {users.filter((u) => u.role?.name === 'manager').length}
+                        </div>
                         <p className="text-xs text-muted-foreground">Content managers</p>
                     </CardContent>
                 </Card>
@@ -255,8 +277,8 @@ export default function UsersPage() {
                     <CardDescription>View and manage all user accounts</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <FilterBar 
-                        fields={['search', 'status']} 
+                    <FilterBar
+                        fields={['search', 'status']}
                         onChange={setFilters}
                         defaultState={filters}
                     />
@@ -280,13 +302,30 @@ export default function UsersPage() {
                                         <TableCell>
                                             <div className="flex items-center space-x-3">
                                                 <Avatar className="h-8 w-8">
-                                                    <AvatarImage src="" alt={getDisplayName(user.name, user.full_name, user.email)} />
+                                                    <AvatarImage
+                                                        src=""
+                                                        alt={getDisplayName(
+                                                            user.name,
+                                                            user.full_name,
+                                                            user.email
+                                                        )}
+                                                    />
                                                     <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
-                                                        {getInitials(user.name, user.full_name, user.email)}
+                                                        {getInitials(
+                                                            user.name,
+                                                            user.full_name,
+                                                            user.email
+                                                        )}
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 <div>
-                                                    <div className="font-medium">{getDisplayName(user.name, user.full_name, user.email)}</div>
+                                                    <div className="font-medium">
+                                                        {getDisplayName(
+                                                            user.name,
+                                                            user.full_name,
+                                                            user.email
+                                                        )}
+                                                    </div>
                                                     <div className="text-sm text-muted-foreground flex items-center">
                                                         <Mail className="h-3 w-3 mr-1" />
                                                         {user.email}
@@ -296,14 +335,24 @@ export default function UsersPage() {
                                         </TableCell>
                                         <TableCell>
                                             {user.role && (
-                                                <Badge variant={getRoleBadgeVariant(user.role.name)} className="text-xs">
-                                                    {user.role.name === 'admin' && <Shield className="h-3 w-3 mr-1" />}
-                                                    <span className="capitalize">{user.role.name}</span>
+                                                <Badge
+                                                    variant={getRoleBadgeVariant(user.role.name)}
+                                                    className="text-xs"
+                                                >
+                                                    {user.role.name === 'admin' && (
+                                                        <Shield className="h-3 w-3 mr-1" />
+                                                    )}
+                                                    <span className="capitalize">
+                                                        {user.role.name}
+                                                    </span>
                                                 </Badge>
                                             )}
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant={user.is_active ? 'default' : 'secondary'} className="text-xs">
+                                            <Badge
+                                                variant={user.is_active ? 'default' : 'secondary'}
+                                                className="text-xs"
+                                            >
                                                 {user.is_active ? 'Active' : 'Inactive'}
                                             </Badge>
                                         </TableCell>
@@ -316,13 +365,19 @@ export default function UsersPage() {
                                         <TableCell>
                                             <div className="text-sm flex items-center">
                                                 <Calendar className="h-3 w-3 mr-1" />
-                                                {user.last_login ? formatDate(user.last_login) : 'Never'}
+                                                {user.last_login
+                                                    ? formatDate(user.last_login)
+                                                    : 'Never'}
                                             </div>
                                         </TableCell>
                                         <TableCell>
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8"
+                                                    >
                                                         <MoreHorizontal className="h-4 w-4" />
                                                     </Button>
                                                 </DropdownMenuTrigger>
