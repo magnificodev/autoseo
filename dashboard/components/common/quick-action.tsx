@@ -12,66 +12,18 @@ interface QuickActionProps {
     description: string;
     icon: LucideIcon;
     href: string;
-    color?: 'blue' | 'emerald' | 'amber' | 'green' | 'purple' | 'orange' | 'red';
     badge?: string;
     className?: string;
 }
-
-const colorVariants = {
-    blue: {
-        bg: 'bg-muted',
-        icon: 'text-blue-600 dark:text-blue-400',
-        hover: 'hover:bg-muted/80',
-        border: 'border-border',
-    },
-    emerald: {
-        bg: 'bg-muted',
-        icon: 'text-emerald-600 dark:text-emerald-400',
-        hover: 'hover:bg-muted/80',
-        border: 'border-border',
-    },
-    amber: {
-        bg: 'bg-muted',
-        icon: 'text-amber-600 dark:text-amber-400',
-        hover: 'hover:bg-muted/80',
-        border: 'border-border',
-    },
-    green: {
-        bg: 'bg-muted',
-        icon: 'text-green-600 dark:text-green-400',
-        hover: 'hover:bg-muted/80',
-        border: 'border-border',
-    },
-    purple: {
-        bg: 'bg-muted',
-        icon: 'text-purple-600 dark:text-purple-400',
-        hover: 'hover:bg-muted/80',
-        border: 'border-border',
-    },
-    orange: {
-        bg: 'bg-muted',
-        icon: 'text-orange-600 dark:text-orange-400',
-        hover: 'hover:bg-muted/80',
-        border: 'border-border',
-    },
-    red: {
-        bg: 'bg-muted',
-        icon: 'text-red-600 dark:text-red-400',
-        hover: 'hover:bg-muted/80',
-        border: 'border-border',
-    },
-};
 
 export function QuickAction({
     title,
     description,
     icon: Icon,
     href,
-    color = 'blue',
     badge,
     className,
 }: QuickActionProps) {
-    const colors = colorVariants[color];
 
     return (
         <TooltipProvider>
@@ -80,21 +32,15 @@ export function QuickAction({
                     <Card
                         className={cn(
                             'group relative overflow-hidden transition-all duration-200 cursor-pointer',
-                            'hover:shadow-sm hover:scale-[1.01]',
-                            colors.hover,
+                            'hover:shadow-sm hover:scale-[1.01] hover:bg-muted/50',
                             className
                         )}
                     >
                         <Link href={href} className="block">
                             <CardHeader className="pb-3">
                                 <div className="flex items-center justify-between">
-                                    <div
-                                        className={cn(
-                                            'p-2 rounded-lg transition-colors',
-                                            colors.bg
-                                        )}
-                                    >
-                                        <Icon className={cn('h-5 w-5', colors.icon)} />
+                                    <div className="p-2 rounded-lg bg-muted transition-colors">
+                                        <Icon className="h-5 w-5 text-muted-foreground" />
                                     </div>
                                     <div className="flex items-center space-x-2">
                                         {badge && (

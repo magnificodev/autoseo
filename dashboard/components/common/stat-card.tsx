@@ -10,7 +10,6 @@ interface StatCardProps {
     value: number | string;
     description?: string;
     icon: LucideIcon;
-    color?: 'blue' | 'emerald' | 'amber' | 'green' | 'purple' | 'orange' | 'red';
     trend?: {
         value: string;
         direction: 'up' | 'down' | 'neutral';
@@ -19,55 +18,15 @@ interface StatCardProps {
     className?: string;
 }
 
-const colorVariants = {
-    blue: {
-        bg: 'bg-muted',
-        icon: 'text-blue-600 dark:text-blue-400',
-        accent: 'border-border',
-    },
-    emerald: {
-        bg: 'bg-muted',
-        icon: 'text-emerald-600 dark:text-emerald-400',
-        accent: 'border-border',
-    },
-    amber: {
-        bg: 'bg-muted',
-        icon: 'text-amber-600 dark:text-amber-400',
-        accent: 'border-border',
-    },
-    green: {
-        bg: 'bg-muted',
-        icon: 'text-green-600 dark:text-green-400',
-        accent: 'border-border',
-    },
-    purple: {
-        bg: 'bg-muted',
-        icon: 'text-purple-600 dark:text-purple-400',
-        accent: 'border-border',
-    },
-    orange: {
-        bg: 'bg-muted',
-        icon: 'text-orange-600 dark:text-orange-400',
-        accent: 'border-border',
-    },
-    red: {
-        bg: 'bg-muted',
-        icon: 'text-red-600 dark:text-red-400',
-        accent: 'border-border',
-    },
-};
-
 export function StatCard({
     title,
     value,
     description,
     icon: Icon,
-    color = 'blue',
     trend,
     progress,
     className,
 }: StatCardProps) {
-    const colors = colorVariants[color];
 
     const getTrendIcon = () => {
         if (!trend) return null;
@@ -90,8 +49,8 @@ export function StatCard({
         >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-                <div className={cn('p-2 rounded-lg', colors.bg)}>
-                    <Icon className={cn('h-4 w-4', colors.icon)} />
+                <div className="p-2 rounded-lg bg-muted">
+                    <Icon className="h-4 w-4 text-muted-foreground" />
                 </div>
             </CardHeader>
             <CardContent>
