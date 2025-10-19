@@ -2,9 +2,9 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -42,8 +42,20 @@ export default function LoginPage() {
                 router.push('/');
                 router.refresh();
             } else {
-                const errorData = await response.json();
-                setError(errorData.detail || 'Login failed');
+                let message = 'Login failed';
+                try {
+                    const text = await response.text();
+                    try {
+                        const data = JSON.parse(text);
+                        const detail = (data && data.detail) || text;
+                        message = typeof detail === 'string' ? detail : 'Login failed';
+                    } catch {
+                        message = text || 'Login failed';
+                    }
+                } catch {
+                    // ignore
+                }
+                setError(message);
             }
         } catch (err) {
             setError('Connection error. Please try again.');
@@ -128,8 +140,14 @@ export default function LoginPage() {
 
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-2">
-                                    <Checkbox id="remember" checked={remember} onCheckedChange={(v) => setRemember(Boolean(v))} />
-                                    <Label htmlFor="remember" className="text-sm">Remember me</Label>
+                                    <Checkbox
+                                        id="remember"
+                                        checked={remember}
+                                        onCheckedChange={(v) => setRemember(Boolean(v))}
+                                    />
+                                    <Label htmlFor="remember" className="text-sm">
+                                        Remember me
+                                    </Label>
                                 </div>
                             </div>
 
