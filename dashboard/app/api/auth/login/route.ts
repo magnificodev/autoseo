@@ -11,18 +11,19 @@ export async function POST(request: NextRequest) {
         // Forward to backend API using form data
         const backendUrl = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
         const formData = new URLSearchParams();
+        // OAuth2PasswordRequestForm compatibility
+        formData.append('grant_type', 'password');
         formData.append('username', email);
         formData.append('password', password);
-        if (remember) {
-            formData.append('remember', 'true');
-        }
+        formData.append('scope', '');
+        if (remember) formData.append('remember', 'true');
 
         const response = await fetch(`${backendUrl}/api/auth/login-cookie`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: formData,
+            body: formData.toString(),
         });
 
         if (!response.ok) {
