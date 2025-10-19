@@ -1,15 +1,15 @@
 'use client';
 
+import { NAV_GROUPS, NAV_ITEMS } from '@/components/navigation/nav-data';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
-import { NAV_GROUPS, NAV_ITEMS } from '@/components/navigation/nav-data';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { Menu } from 'lucide-react';
-import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 
 interface MobileNavProps {
     className?: string;
@@ -71,7 +71,7 @@ export function MobileNav({ className }: MobileNavProps) {
                                         {group.items.map((item) => {
                                             const Icon = item.icon;
                                             const isActive = pathname === item.href;
-                                            
+
                                             return (
                                                 <Button
                                                     key={item.key}
@@ -82,9 +82,14 @@ export function MobileNav({ className }: MobileNavProps) {
                                                     )}
                                                     asChild
                                                 >
-                                                    <Link href={item.href} onClick={() => setOpen(false)}>
+                                                    <Link
+                                                        href={item.href}
+                                                        onClick={() => setOpen(false)}
+                                                    >
                                                         <Icon className="h-4 w-4 mr-3" />
-                                                        <span className="flex-1 text-left">{item.label}</span>
+                                                        <span className="flex-1 text-left">
+                                                            {item.label}
+                                                        </span>
                                                     </Link>
                                                 </Button>
                                             );

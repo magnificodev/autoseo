@@ -1,10 +1,10 @@
 'use client';
 
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { LucideIcon, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { LucideIcon, Minus, TrendingDown, TrendingUp } from 'lucide-react';
 
 interface StatCardProps {
     title: string;
@@ -56,9 +56,7 @@ export function StatCard({
     return (
         <Card className={cn('relative overflow-hidden', className)}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                    {title}
-                </CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
                 {Icon && (
                     <div className="p-2 rounded-lg bg-muted">
                         <Icon className="h-4 w-4 text-muted-foreground" />
@@ -68,9 +66,9 @@ export function StatCard({
             <CardContent>
                 <div className="space-y-2">
                     <div className="text-2xl font-bold">{value}</div>
-                    
+
                     {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
-                    
+
                     {delta && (
                         <div className="flex items-center space-x-1">
                             {getTrendIcon()}
@@ -82,7 +80,7 @@ export function StatCard({
                             )}
                         </div>
                     )}
-                    
+
                     {progress !== undefined && (
                         <div className="space-y-1">
                             <Progress value={progress} className="h-1" />

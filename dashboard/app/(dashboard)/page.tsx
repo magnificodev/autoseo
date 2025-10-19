@@ -1,24 +1,24 @@
 'use client';
 
-import { StatCard } from '@/components/common/stat-card';
-import { QuickAction } from '@/components/common/quick-action';
 import { ActivityTable } from '@/components/common/activity-table';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { QuickAction } from '@/components/common/quick-action';
+import { StatCard } from '@/components/common/stat-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { 
-    Activity, 
-    BarChart3, 
-    CheckCircle, 
-    Clock, 
-    FileText, 
-    Globe, 
-    Search, 
-    Settings, 
-    TrendingUp, 
-    Users, 
-    Zap 
+import {
+    Activity,
+    BarChart3,
+    CheckCircle,
+    Clock,
+    FileText,
+    Globe,
+    Search,
+    Settings,
+    TrendingUp,
+    Users,
+    Zap,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -294,13 +294,17 @@ export default function DashboardPage() {
                             <span className="text-sm font-medium text-muted-foreground">
                                 Site Performance
                             </span>
-                            <span className="text-sm font-bold text-green-600 dark:text-green-400">Excellent</span>
+                            <span className="text-sm font-bold text-green-600 dark:text-green-400">
+                                Excellent
+                            </span>
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-sm font-medium text-muted-foreground">
                                 SEO Score
                             </span>
-                            <span className="text-sm font-bold text-blue-600 dark:text-blue-400">92/100</span>
+                            <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                                92/100
+                            </span>
                         </div>
                     </CardContent>
                 </Card>
