@@ -16,6 +16,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Bell, Search, User, Settings, LogOut, ChevronDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface TopbarProps {
     title?: string;
@@ -26,6 +27,7 @@ interface TopbarProps {
 
 export function Topbar({ title, description, className, children }: TopbarProps) {
     const [scrolled, setScrolled] = useState(false);
+    const router = useRouter();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -35,6 +37,19 @@ export function Topbar({ title, description, className, children }: TopbarProps)
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
+
+    const handleLogout = async () => {
+        try {
+            await fetch('/api/auth/logout', {
+                method: 'POST',
+                credentials: 'include',
+            });
+            router.push('/login');
+            router.refresh();
+        } catch (error) {
+            console.error('Logout failed:', error);
+        }
+    };
 
     return (
         <header
@@ -125,7 +140,10 @@ export function Topbar({ title, description, className, children }: TopbarProps)
                                 <span>Settings</span>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-red-600 focus:text-red-600">
+                            <DropdownMenuItem 
+                                onClick={handleLogout}
+                                className="text-red-600 focus:text-red-600 cursor-pointer"
+                            >
                                 <LogOut className="mr-2 h-4 w-4" />
                                 <span>Log out</span>
                             </DropdownMenuItem>

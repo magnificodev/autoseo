@@ -73,7 +73,7 @@ export default function ClientAuthLinks() {
         return (
             <div className="flex items-center space-x-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm text-muted-foreground">Đang tải...</span>
+                <span className="text-sm text-muted-foreground">Loading...</span>
             </div>
         );
     }
