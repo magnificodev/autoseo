@@ -2,15 +2,15 @@ import os
 from datetime import datetime, timedelta
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status, Form
+from fastapi import APIRouter, Depends, Form, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import jwt
 from passlib.context import CryptContext
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from src.api.deps.auth import get_current_user
-from src.database.models import Base, User, Role
+from src.database.models import Base, Role, User
 from src.database.session import SessionLocal, engine
-from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -48,45 +48,49 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 @router.post("/register")
 def register(
-    email: str = Form(...),
-    password: str = Form(...),
-    db: Session = Depends(get_db)
+    email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)
 ):
     # Đảm bảo bảng tồn tại trong trường hợp startup hook chưa chạy
     try:
         Base.metadata.create_all(bind=engine)
     except Exception:
         pass
-    
+
     # Email validation
     if not email or "@" not in email:
         raise HTTPException(status_code=400, detail="Email không hợp lệ")
-    
+
     # Password strength check
     if len(password) < 6:
         raise HTTPException(status_code=400, detail="Mật khẩu phải có ít nhất 6 ký tự")
-    
+
     # Check if email already exists
     if db.query(User).filter(User.email == email).first():
         raise HTTPException(status_code=400, detail="Email đã tồn tại")
-    
+
     try:
         # Get default viewer role
         viewer_role = db.query(Role).filter(Role.name == "viewer").first()
         if not viewer_role:
             # Create default roles if they don't exist
             admin_role = Role(name="admin", max_users=1, permissions='["*"]')
-            manager_role = Role(name="manager", max_users=5, permissions='["dashboard.view", "sites.*", "keywords.*", "content.*", "audit_logs.view"]')
-            viewer_role = Role(name="viewer", max_users=-1, permissions='["dashboard.view", "audit_logs.view"]')
+            manager_role = Role(
+                name="manager",
+                max_users=5,
+                permissions='["dashboard.view", "sites.*", "keywords.*", "content.*", "audit_logs.view"]',
+            )
+            viewer_role = Role(
+                name="viewer",
+                max_users=-1,
+                permissions='["dashboard.view", "audit_logs.view"]',
+            )
             db.add_all([admin_role, manager_role, viewer_role])
             db.commit()
             db.refresh(viewer_role)
-        
+
         # Create user with viewer role
         user = User(
-            email=email,
-            password_hash=hash_password(password),
-            role_id=viewer_role.id
+            email=email, password_hash=hash_password(password), role_id=viewer_role.id
         )
         db.add(user)
         db.commit()
@@ -121,9 +125,10 @@ def check_database(db: Session = Depends(get_db)):
     try:
         # Check if tables exist
         from sqlalchemy import inspect
+
         inspector = inspect(db.bind)
         tables = inspector.get_table_names()
-        
+
         # Check if users table exists and has data
         users_count = 0
         roles_count = 0
@@ -131,17 +136,19 @@ def check_database(db: Session = Depends(get_db)):
             users_count = db.query(User).count()
         except Exception as e:
             users_count = f"Error: {str(e)}"
-        
+
         try:
             roles_count = db.query(Role).count()
         except Exception as e:
             roles_count = f"Error: {str(e)}"
-        
+
         return {
             "tables": tables,
             "users_count": users_count,
             "roles_count": roles_count,
-            "database_url": str(db.bind.url).replace(db.bind.url.password or "", "***") if db.bind.url.password else str(db.bind.url)
+            "database_url": str(db.bind.url).replace(db.bind.url.password or "", "***")
+            if db.bind.url.password
+            else str(db.bind.url),
         }
     except Exception as e:
         return {"error": str(e)}
@@ -153,20 +160,19 @@ def init_roles(db: Session = Depends(get_db)):
     existing_roles = db.query(Role).count()
     if existing_roles > 0:
         return {"message": "Roles already exist", "count": existing_roles}
-    
+
     # Create default roles
-    roles = [
-        Role(name="admin"),
-        Role(name="editor"),
-        Role(name="viewer")
-    ]
-    
+    roles = [Role(name="admin"), Role(name="editor"), Role(name="viewer")]
+
     for role in roles:
         db.add(role)
-    
+
     db.commit()
-    
-    return {"message": "Default roles created successfully", "roles": [r.name for r in roles]}
+
+    return {
+        "message": "Default roles created successfully",
+        "roles": [r.name for r in roles],
+    }
 
 
 @router.get("/list-roles")
@@ -186,11 +192,15 @@ def update_user_role(request: UpdateUserRoleRequest, db: Session = Depends(get_d
     """Update a user's role"""
     user = db.query(User).filter(User.email == request.email).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
 
     role = db.query(Role).filter(Role.name == request.role_name).first()
     if not role:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Role not found"
+        )
 
     user.role_id = role.id
     db.add(user)
@@ -206,10 +216,9 @@ def create_admin_user(request: CreateAdminRequest, db: Session = Depends(get_db)
     existing_users = db.query(User).count()
     if existing_users > 0:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Admin user already exists"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Admin user already exists"
         )
-    
+
     # Create admin role if it doesn't exist
     admin_role = db.query(Role).filter(Role.name == "admin").first()
     if not admin_role:
@@ -217,35 +226,71 @@ def create_admin_user(request: CreateAdminRequest, db: Session = Depends(get_db)
         db.add(admin_role)
         db.commit()
         db.refresh(admin_role)
-    
+
     # Create admin user
     password_hash = pwd_context.hash(request.password)
     admin_user = User(
         email=request.email,
         password_hash=password_hash,
         role_id=admin_role.id,
-        is_active=True
+        is_active=True,
     )
     db.add(admin_user)
     db.commit()
     db.refresh(admin_user)
-    
+
     return {"message": "Admin user created successfully", "user_id": admin_user.id}
 
 
 @router.post("/login-cookie")
-def login_cookie(
+async def login_cookie(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     remember: bool = Form(False),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    user = db.query(User).filter(User.email == form_data.username).first()
+    # Try to obtain credentials from OAuth2 form first; fallback to raw form or JSON for robustness
+    username = form_data.username if getattr(form_data, "username", None) else None
+    password = form_data.password if getattr(form_data, "password", None) else None
+    if not username or not password:
+        # Fallback: parse form manually
+        try:
+            form = await request.form()
+            username = username or form.get("username") or form.get("email")
+            password = password or form.get("password")
+            if "remember" in form:
+                try:
+                    remember = bool(form.get("remember") in (True, "true", "1", 1))
+                except Exception:
+                    pass
+        except Exception:
+            pass
+    if not username or not password:
+        # Fallback: parse JSON
+        try:
+            data = await request.json()
+            username = username or data.get("username") or data.get("email")
+            password = password or data.get("password")
+            if "remember" in data:
+                try:
+                    remember = bool(data.get("remember"))
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+    if not username or not password:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Missing username/password")
+
+    user = db.query(User).filter(User.email == username).first()
     if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Sai thông tin đăng nhập"
         )
     # Token expiry: extend when remember is true (e.g., 30 days)
-    expires_delta = timedelta(days=30) if remember else timedelta(minutes=JWT_EXPIRE_MIN)
+    expires_delta = (
+        timedelta(days=30) if remember else timedelta(minutes=JWT_EXPIRE_MIN)
+    )
     token = create_access_token({"sub": str(user.id)}, expires_delta=expires_delta)
     from fastapi import Response
 
@@ -272,8 +317,8 @@ def get_current_user_info(current_user: User = Depends(get_current_user)):
         "is_active": current_user.is_active,
         "role": {
             "id": current_user.role.id if current_user.role else None,
-            "name": current_user.role.name if current_user.role else "unknown"
-        }
+            "name": current_user.role.name if current_user.role else "unknown",
+        },
     }
 
 
