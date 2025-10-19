@@ -32,7 +32,7 @@ export function AppShell({ children, title, description, className }: AppShellPr
                 {/* Main Content Area */}
                 <main
                     className={cn(
-                        'flex-1 overflow-y-auto bg-gradient-to-br from-background to-muted/20',
+                        'flex-1 overflow-y-auto bg-background',
                         className
                     )}
                 >

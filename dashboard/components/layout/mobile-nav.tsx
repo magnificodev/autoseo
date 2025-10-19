@@ -32,8 +32,8 @@ export function MobileNav({ children, className }: MobileNavProps) {
                     {/* Header */}
                     <div className="flex h-16 items-center border-b px-6">
                         <div className="flex items-center space-x-3">
-                            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-lg">
-                                <span className="text-white font-bold text-sm">A</span>
+                            <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center">
+                                <span className="text-primary-foreground font-bold text-sm">A</span>
                             </div>
                             <div>
                                 <span className="text-xl font-bold text-foreground">Autoseo</span>

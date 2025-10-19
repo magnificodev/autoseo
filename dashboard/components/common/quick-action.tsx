@@ -19,46 +19,46 @@ interface QuickActionProps {
 
 const colorVariants = {
     blue: {
-        bg: 'bg-blue-50 dark:bg-blue-950/20',
-        icon: 'text-blue-600',
-        hover: 'hover:bg-blue-100 dark:hover:bg-blue-950/40',
-        border: 'border-blue-200 dark:border-blue-800',
+        bg: 'bg-muted',
+        icon: 'text-blue-600 dark:text-blue-400',
+        hover: 'hover:bg-muted/80',
+        border: 'border-border',
     },
     emerald: {
-        bg: 'bg-emerald-50 dark:bg-emerald-950/20',
-        icon: 'text-emerald-600',
-        hover: 'hover:bg-emerald-100 dark:hover:bg-emerald-950/40',
-        border: 'border-emerald-200 dark:border-emerald-800',
+        bg: 'bg-muted',
+        icon: 'text-emerald-600 dark:text-emerald-400',
+        hover: 'hover:bg-muted/80',
+        border: 'border-border',
     },
     amber: {
-        bg: 'bg-amber-50 dark:bg-amber-950/20',
-        icon: 'text-amber-600',
-        hover: 'hover:bg-amber-100 dark:hover:bg-amber-950/40',
-        border: 'border-amber-200 dark:border-amber-800',
+        bg: 'bg-muted',
+        icon: 'text-amber-600 dark:text-amber-400',
+        hover: 'hover:bg-muted/80',
+        border: 'border-border',
     },
     green: {
-        bg: 'bg-green-50 dark:bg-green-950/20',
-        icon: 'text-green-600',
-        hover: 'hover:bg-green-100 dark:hover:bg-green-950/40',
-        border: 'border-green-200 dark:border-green-800',
+        bg: 'bg-muted',
+        icon: 'text-green-600 dark:text-green-400',
+        hover: 'hover:bg-muted/80',
+        border: 'border-border',
     },
     purple: {
-        bg: 'bg-purple-50 dark:bg-purple-950/20',
-        icon: 'text-purple-600',
-        hover: 'hover:bg-purple-100 dark:hover:bg-purple-950/40',
-        border: 'border-purple-200 dark:border-purple-800',
+        bg: 'bg-muted',
+        icon: 'text-purple-600 dark:text-purple-400',
+        hover: 'hover:bg-muted/80',
+        border: 'border-border',
     },
     orange: {
-        bg: 'bg-orange-50 dark:bg-orange-950/20',
-        icon: 'text-orange-600',
-        hover: 'hover:bg-orange-100 dark:hover:bg-orange-950/40',
-        border: 'border-orange-200 dark:border-orange-800',
+        bg: 'bg-muted',
+        icon: 'text-orange-600 dark:text-orange-400',
+        hover: 'hover:bg-muted/80',
+        border: 'border-border',
     },
     red: {
-        bg: 'bg-red-50 dark:bg-red-950/20',
-        icon: 'text-red-600',
-        hover: 'hover:bg-red-100 dark:hover:bg-red-950/40',
-        border: 'border-red-200 dark:border-red-800',
+        bg: 'bg-muted',
+        icon: 'text-red-600 dark:text-red-400',
+        hover: 'hover:bg-muted/80',
+        border: 'border-border',
     },
 };
 
@@ -80,9 +80,8 @@ export function QuickAction({
                     <Card
                         className={cn(
                             'group relative overflow-hidden transition-all duration-200 cursor-pointer',
-                            'hover:shadow-md hover:scale-[1.02]',
+                            'hover:shadow-sm hover:scale-[1.01]',
                             colors.hover,
-                            colors.border,
                             className
                         )}
                     >

@@ -348,9 +348,9 @@ export default function DashboardPage() {
                 <Card>
                     <CardHeader>
                         <div className="flex items-center space-x-2">
-                            <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/20">
-                                <TrendingUp className="h-5 w-5 text-blue-600" />
-                            </div>
+                        <div className="p-2 rounded-lg bg-muted">
+                            <TrendingUp className="h-5 w-5 text-muted-foreground" />
+                        </div>
                             <div>
                                 <CardTitle className="text-lg">Performance</CardTitle>
                                 <CardDescription>Key metrics overview</CardDescription>
@@ -368,13 +368,13 @@ export default function DashboardPage() {
                             <span className="text-sm font-medium text-muted-foreground">
                                 Site Performance
                             </span>
-                            <span className="text-sm font-bold text-green-600">Excellent</span>
+                            <span className="text-sm font-bold text-green-600 dark:text-green-400">Excellent</span>
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-sm font-medium text-muted-foreground">
                                 SEO Score
                             </span>
-                            <span className="text-sm font-bold text-blue-600">92/100</span>
+                            <span className="text-sm font-bold text-blue-600 dark:text-blue-400">92/100</span>
                         </div>
                     </CardContent>
                 </Card>
@@ -382,9 +382,9 @@ export default function DashboardPage() {
                 <Card>
                     <CardHeader>
                         <div className="flex items-center space-x-2">
-                            <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/20">
-                                <Zap className="h-5 w-5 text-emerald-600" />
-                            </div>
+                        <div className="p-2 rounded-lg bg-muted">
+                            <Zap className="h-5 w-5 text-muted-foreground" />
+                        </div>
                             <div>
                                 <CardTitle className="text-lg">Automation Status</CardTitle>
                                 <CardDescription>Current automation tasks</CardDescription>

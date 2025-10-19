@@ -31,7 +31,7 @@ export function Topbar({ title, description, className, children }: TopbarProps)
     return (
         <header
             className={cn(
-                'sticky top-0 z-40 border-b bg-card/50 backdrop-blur-sm transition-shadow',
+                'sticky top-0 z-40 border-b bg-background transition-shadow',
                 scrolled && 'shadow-sm',
                 className
             )}

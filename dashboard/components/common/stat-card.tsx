@@ -21,39 +21,39 @@ interface StatCardProps {
 
 const colorVariants = {
     blue: {
-        bg: 'bg-blue-50 dark:bg-blue-950/20',
-        icon: 'text-blue-600',
-        accent: 'border-blue-200 dark:border-blue-800',
+        bg: 'bg-muted',
+        icon: 'text-blue-600 dark:text-blue-400',
+        accent: 'border-border',
     },
     emerald: {
-        bg: 'bg-emerald-50 dark:bg-emerald-950/20',
-        icon: 'text-emerald-600',
-        accent: 'border-emerald-200 dark:border-emerald-800',
+        bg: 'bg-muted',
+        icon: 'text-emerald-600 dark:text-emerald-400',
+        accent: 'border-border',
     },
     amber: {
-        bg: 'bg-amber-50 dark:bg-amber-950/20',
-        icon: 'text-amber-600',
-        accent: 'border-amber-200 dark:border-amber-800',
+        bg: 'bg-muted',
+        icon: 'text-amber-600 dark:text-amber-400',
+        accent: 'border-border',
     },
     green: {
-        bg: 'bg-green-50 dark:bg-green-950/20',
-        icon: 'text-green-600',
-        accent: 'border-green-200 dark:border-green-800',
+        bg: 'bg-muted',
+        icon: 'text-green-600 dark:text-green-400',
+        accent: 'border-border',
     },
     purple: {
-        bg: 'bg-purple-50 dark:bg-purple-950/20',
-        icon: 'text-purple-600',
-        accent: 'border-purple-200 dark:border-purple-800',
+        bg: 'bg-muted',
+        icon: 'text-purple-600 dark:text-purple-400',
+        accent: 'border-border',
     },
     orange: {
-        bg: 'bg-orange-50 dark:bg-orange-950/20',
-        icon: 'text-orange-600',
-        accent: 'border-orange-200 dark:border-orange-800',
+        bg: 'bg-muted',
+        icon: 'text-orange-600 dark:text-orange-400',
+        accent: 'border-border',
     },
     red: {
-        bg: 'bg-red-50 dark:bg-red-950/20',
-        icon: 'text-red-600',
-        accent: 'border-red-200 dark:border-red-800',
+        bg: 'bg-muted',
+        icon: 'text-red-600 dark:text-red-400',
+        accent: 'border-border',
     },
 };
 
@@ -84,8 +84,7 @@ export function StatCard({
     return (
         <Card
             className={cn(
-                'relative overflow-hidden transition-all duration-200 hover:shadow-md',
-                colors.accent,
+                'relative overflow-hidden transition-all duration-200 hover:shadow-sm',
                 className
             )}
         >
