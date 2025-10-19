@@ -102,11 +102,52 @@ def register(
 
 
 @router.post("/login")
-def login(
-    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+async def login(
+    request: Request,
+    form_data: OAuth2PasswordRequestForm = Depends(), 
+    db: Session = Depends(get_db)
 ):
-    user = db.query(User).filter(User.email == form_data.username).first()
-    if not user or not verify_password(form_data.password, user.password_hash):
+    # Debug logging
+    print(f"LOGIN endpoint - Request content type: {request.headers.get('content-type')}")
+    print(f"LOGIN endpoint - Request method: {request.method}")
+    
+    # Try to obtain credentials from OAuth2 form first; fallback to raw form or JSON for robustness
+    username = form_data.username if getattr(form_data, "username", None) else None
+    password = form_data.password if getattr(form_data, "password", None) else None
+    
+    print(f"LOGIN endpoint - OAuth2 form - username: {username}, password: {'***' if password else None}")
+    
+    if not username or not password:
+        # Fallback: parse form manually
+        try:
+            form = await request.form()
+            print(f"LOGIN endpoint - Raw form data: {dict(form)}")
+            username = username or form.get("username") or form.get("email")
+            password = password or form.get("password")
+        except Exception as e:
+            print(f"LOGIN endpoint - Form parsing error: {e}")
+            pass
+    if not username or not password:
+        # Fallback: parse JSON
+        try:
+            data = await request.json()
+            print(f"LOGIN endpoint - JSON data: {data}")
+            username = username or data.get("username") or data.get("email")
+            password = password or data.get("password")
+        except Exception as e:
+            print(f"LOGIN endpoint - JSON parsing error: {e}")
+            pass
+
+    print(f"LOGIN endpoint - Final - username: {username}, password: {'***' if password else None}")
+
+    if not username or not password:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Missing username/password",
+        )
+
+    user = db.query(User).filter(User.email == username).first()
+    if not user or not verify_password(password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Sai thông tin đăng nhập"
         )
@@ -252,13 +293,15 @@ async def login_cookie(
     # Debug logging
     print(f"Request content type: {request.headers.get('content-type')}")
     print(f"Request method: {request.method}")
-    
+
     # Try to obtain credentials from OAuth2 form first; fallback to raw form or JSON for robustness
     username = form_data.username if getattr(form_data, "username", None) else None
     password = form_data.password if getattr(form_data, "password", None) else None
-    
-    print(f"OAuth2 form - username: {username}, password: {'***' if password else None}")
-    
+
+    print(
+        f"OAuth2 form - username: {username}, password: {'***' if password else None}"
+    )
+
     if not username or not password:
         # Fallback: parse form manually
         try:
@@ -290,7 +333,9 @@ async def login_cookie(
             print(f"JSON parsing error: {e}")
             pass
 
-    print(f"Final - username: {username}, password: {'***' if password else None}, remember: {remember}")
+    print(
+        f"Final - username: {username}, password: {'***' if password else None}, remember: {remember}"
+    )
 
     if not username or not password:
         raise HTTPException(
