@@ -20,10 +20,8 @@ export async function POST(request: NextRequest) {
 
         const response = await fetch(`${backendUrl}/api/auth/login-cookie`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: formData.toString(),
+            // Let fetch set the correct header for URLSearchParams automatically
+            body: formData as unknown as URLSearchParams,
         });
 
         if (!response.ok) {
