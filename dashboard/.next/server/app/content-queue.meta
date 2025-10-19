@@ -1,5 +1,5 @@
 {
   "headers": {
-    "x-next-cache-tags": "_N_T_/layout,_N_T_/content-queue/layout,_N_T_/content-queue/page,_N_T_/content-queue"
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/(dashboard)/layout,_N_T_/(dashboard)/content-queue/layout,_N_T_/(dashboard)/content-queue/page,_N_T_/content-queue"
   }
 }
