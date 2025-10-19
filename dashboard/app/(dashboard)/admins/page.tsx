@@ -43,71 +43,71 @@ export default function AdminsPage() {
     const [error, setError] = useState<string | null>(null);
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
-    async function safeJson(res: Response) {
+  async function safeJson(res: Response) {
         const ct = res.headers.get('content-type') || '';
         if (ct.includes('application/json')) return res.json();
         const text = await res.text();
         throw new Error(text.slice(0, 300));
-    }
+  }
 
-    async function fetchAdmins() {
-        try {
+  async function fetchAdmins() {
+    try {
             setError(null);
             const res = await fetch('/api/admins/', { credentials: 'include' });
             if (!res.ok) throw new Error(await res.text());
             const data = await safeJson(res);
             setAdmins(data);
-        } catch (e: any) {
+    } catch (e: any) {
             setError(e.message || 'Error');
-        }
     }
+  }
 
-    async function addAdmin(e: React.FormEvent) {
+  async function addAdmin(e: React.FormEvent) {
         e.preventDefault();
         if (!userId.trim()) return;
         setLoading(true);
         setError(null);
-        try {
-            const res = await fetch('/api/admins/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
+    try {
+      const res = await fetch('/api/admins/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
                 body: JSON.stringify({ user_id: Number(userId) }),
             });
             if (!res.ok) throw new Error(await res.text());
             setUserId('');
             setIsAddDialogOpen(false);
             await fetchAdmins();
-        } catch (e: any) {
+    } catch (e: any) {
             setError(e.message || 'Error');
-        } finally {
+    } finally {
             setLoading(false);
-        }
     }
+  }
 
-    async function removeAdmin(id: number) {
+  async function removeAdmin(id: number) {
         if (!confirm('Are you sure you want to remove this admin?')) return;
         setLoading(true);
         setError(null);
-        try {
-            const res = await fetch(`/api/admins/${id}`, {
-                method: 'DELETE',
+    try {
+      const res = await fetch(`/api/admins/${id}`, {
+        method: 'DELETE',
                 credentials: 'include',
             });
             if (!res.ok) throw new Error(await res.text());
             await fetchAdmins();
-        } catch (e: any) {
+    } catch (e: any) {
             setError(e.message || 'Error');
-        } finally {
+    } finally {
             setLoading(false);
-        }
     }
+  }
 
-    useEffect(() => {
+  useEffect(() => {
         fetchAdmins();
     }, []);
 
-    return (
+  return (
         <div className="space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
@@ -141,9 +141,9 @@ export default function AdminsPage() {
                                     <Label htmlFor="user_id">User ID</Label>
                                     <Input
                                         id="user_id"
-                                        type="number"
-                                        value={userId}
-                                        onChange={(e) => setUserId(e.target.value)}
+          type="number"
+          value={userId}
+          onChange={(e) => setUserId(e.target.value)}
                                         placeholder="Enter Telegram user ID"
                                         required
                                     />
@@ -170,7 +170,7 @@ export default function AdminsPage() {
                                         )}
                                     </Button>
                                 </div>
-                            </form>
+      </form>
                         </DialogContent>
                     </Dialog>
                 </div>
@@ -269,7 +269,7 @@ export default function AdminsPage() {
                                                     disabled={loading}
                                                 >
                                                     <Trash2 className="h-4 w-4 mr-2" />
-                                                    Remove
+              Remove
                                                 </Button>
                                             </TableCell>
                                         </TableRow>
@@ -280,6 +280,6 @@ export default function AdminsPage() {
                     </div>
                 </CardContent>
             </Card>
-        </div>
+    </div>
     );
 }
