@@ -28,6 +28,7 @@ interface UserDropdownProps {
     id: number;
     email: string;
     name?: string;
+    full_name?: string;
     role?: {
       id: number;
       name: string;
@@ -53,14 +54,19 @@ export function UserDropdown({ user, onLogout }: UserDropdownProps) {
     }
   };
 
-  const getInitials = (name?: string, email?: string) => {
-    if (name) {
-      return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const getInitials = (name?: string, fullName?: string, email?: string) => {
+    const displayName = fullName || name;
+    if (displayName) {
+      return displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
     }
     if (email) {
       return email.slice(0, 2).toUpperCase();
     }
     return 'U';
+  };
+
+  const getDisplayName = (name?: string, fullName?: string, email?: string) => {
+    return fullName || name || email || 'User';
   };
 
   return (
@@ -71,14 +77,14 @@ export function UserDropdown({ user, onLogout }: UserDropdownProps) {
           className="flex items-center space-x-3 px-3 py-2 h-auto hover:bg-accent/50 transition-colors duration-200"
         >
           <Avatar className="h-8 w-8">
-            <AvatarImage src="" alt={user.name || user.email} />
+            <AvatarImage src="" alt={getDisplayName(user.name, user.full_name, user.email)} />
             <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
-              {getInitials(user.name, user.email)}
+              {getInitials(user.name, user.full_name, user.email)}
             </AvatarFallback>
           </Avatar>
           <div className="flex flex-col items-start space-y-0.5">
             <span className="text-sm font-medium text-foreground">
-              {user.name || user.email}
+              {getDisplayName(user.name, user.full_name, user.email)}
             </span>
             {user.role && (
               <Badge 
@@ -97,7 +103,7 @@ export function UserDropdown({ user, onLogout }: UserDropdownProps) {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">
-              {user.name || user.email}
+              {getDisplayName(user.name, user.full_name, user.email)}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
               {user.email}

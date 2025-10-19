@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export default function RegisterPage() {
+    const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -26,7 +27,7 @@ export default function RegisterPage() {
         setError('');
 
         // Validation
-        if (!email || !password || !confirmPassword) {
+        if (!fullName || !email || !password || !confirmPassword) {
             setError('Please fill in all fields');
             setIsLoading(false);
             return;
@@ -51,6 +52,7 @@ export default function RegisterPage() {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
+                    full_name: fullName,
                     email,
                     password,
                 }),
@@ -134,6 +136,25 @@ export default function RegisterPage() {
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="fullName" className="text-sm font-medium">
+                                    Full name
+                                </Label>
+                                <div className="relative">
+                                    <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input
+                                        id="fullName"
+                                        type="text"
+                                        placeholder="Enter your full name"
+                                        value={fullName}
+                                        onChange={(e) => setFullName(e.target.value)}
+                                        className="pl-10 h-11"
+                                        required
+                                        disabled={isLoading}
+                                    />
+                                </div>
+                            </div>
+
                             <div className="space-y-2">
                                 <Label htmlFor="email" className="text-sm font-medium">
                                     Email address

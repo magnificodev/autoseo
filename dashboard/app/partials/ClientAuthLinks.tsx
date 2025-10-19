@@ -1,24 +1,17 @@
 'use client';
 
+import { UserDropdown } from '@/components/dashboard/UserDropdown';
+import { Button } from '@/components/ui/button';
+import { ModeToggle } from '@/components/ui/mode-toggle';
+import { Loader2, LogIn, User, UserPlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { UserDropdown } from '@/components/dashboard/UserDropdown';
-import { ModeToggle } from '@/components/ui/mode-toggle';
-import { 
-  User, 
-  LogOut, 
-  LogIn, 
-  UserPlus,
-  Shield,
-  Loader2
-} from 'lucide-react';
 
 type User = {
     id: number;
     email: string;
     name?: string;
+    full_name?: string;
     role?: {
         id: number;
         name: string;
