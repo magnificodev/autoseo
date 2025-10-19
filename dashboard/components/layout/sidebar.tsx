@@ -85,7 +85,7 @@ export function Sidebar({ className, collapsed = false }: SidebarProps) {
     return (
         <aside
             className={cn(
-                'hidden md:flex md:flex-col border-r bg-card',
+                'hidden md:flex md:flex-col border-r bg-background',
                 collapsed ? 'w-16' : 'w-64',
                 className
             )}
@@ -93,12 +93,12 @@ export function Sidebar({ className, collapsed = false }: SidebarProps) {
             {/* Header */}
             <div className="flex h-16 items-center border-b px-6">
                 <div className="flex items-center space-x-3">
-                    <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center">
                         <span className="text-primary-foreground font-bold text-sm">A</span>
                     </div>
                     {!collapsed && (
                         <div>
-                            <span className="text-xl font-bold text-foreground">Autoseo</span>
+                            <span className="text-lg font-semibold">Autoseo</span>
                             <p className="text-xs text-muted-foreground">SEO Automation</p>
                         </div>
                     )}
