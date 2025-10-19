@@ -1,5 +1,8 @@
 'use client';
 
+import { StatCard } from '@/components/common/stat-card';
+import { QuickAction } from '@/components/common/quick-action';
+import { ActivityTable } from '@/components/common/activity-table';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -60,6 +63,61 @@ export default function DashboardPage() {
         fetchStats();
     }, []);
 
+    const recentActivity = [
+        {
+            id: '1',
+            action: 'Content published successfully',
+            user: 'John Doe',
+            time: '2 minutes ago',
+            type: 'success' as const,
+            target: 'example.com',
+            meta: 'New blog post "SEO Best Practices 2024" was published',
+        },
+        {
+            id: '2',
+            action: 'New content pending review',
+            user: 'Jane Smith',
+            time: '15 minutes ago',
+            type: 'warning' as const,
+            target: 'example.com',
+            meta: 'Article "Keyword Research Guide" is waiting for approval',
+        },
+        {
+            id: '3',
+            action: 'New user registered',
+            user: 'System',
+            time: '1 hour ago',
+            type: 'info' as const,
+            target: 'mike@example.com',
+        },
+        {
+            id: '4',
+            action: 'Site connection established',
+            user: 'Admin',
+            time: '2 hours ago',
+            type: 'success' as const,
+            target: 'newsite.com',
+        },
+        {
+            id: '5',
+            action: 'Keyword research completed',
+            user: 'System',
+            time: '3 hours ago',
+            type: 'success' as const,
+            target: 'digital marketing',
+            meta: 'Generated 15 new keyword suggestions',
+        },
+        {
+            id: '6',
+            action: 'Content generation failed',
+            user: 'System',
+            time: '4 hours ago',
+            type: 'error' as const,
+            target: 'AI automation',
+            meta: 'Failed due to API rate limit',
+        },
+    ];
+
     if (loading) {
         return (
             <div className="space-y-8">
@@ -106,83 +164,54 @@ export default function DashboardPage() {
 
             {/* Stats Grid */}
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Total Sites
-                        </CardTitle>
-                        <Globe className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.totalSites}</div>
-                        <p className="text-xs text-muted-foreground">WordPress sites connected</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Keywords
-                        </CardTitle>
-                        <Search className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.totalKeywords}</div>
-                        <p className="text-xs text-muted-foreground">Keywords being tracked</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Pending Content
-                        </CardTitle>
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.pendingContent}</div>
-                        <p className="text-xs text-muted-foreground">Awaiting approval</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Published
-                        </CardTitle>
-                        <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.publishedContent}</div>
-                        <p className="text-xs text-muted-foreground">Successfully published</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Users
-                        </CardTitle>
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.totalUsers}</div>
-                        <p className="text-xs text-muted-foreground">Active users</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Activity
-                        </CardTitle>
-                        <Activity className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.recentActivity}</div>
-                        <p className="text-xs text-muted-foreground">Actions today</p>
-                    </CardContent>
-                </Card>
+                <StatCard
+                    title="Total Sites"
+                    value={stats.totalSites}
+                    hint="WordPress sites connected"
+                    delta={{ value: '+2 this week', tone: 'up' }}
+                    progress={75}
+                    icon={Globe}
+                />
+                <StatCard
+                    title="Keywords"
+                    value={stats.totalKeywords}
+                    hint="Keywords being tracked"
+                    delta={{ value: '+12% this month', tone: 'up' }}
+                    progress={85}
+                    icon={Search}
+                />
+                <StatCard
+                    title="Pending Content"
+                    value={stats.pendingContent}
+                    hint="Awaiting approval"
+                    delta={{ value: '-3 from yesterday', tone: 'down' }}
+                    progress={30}
+                    icon={Clock}
+                />
+                <StatCard
+                    title="Published"
+                    value={stats.publishedContent}
+                    hint="Successfully published"
+                    delta={{ value: '+8 today', tone: 'up' }}
+                    progress={92}
+                    icon={CheckCircle}
+                />
+                <StatCard
+                    title="Users"
+                    value={stats.totalUsers}
+                    hint="Active users"
+                    delta={{ value: '+1 new user', tone: 'up' }}
+                    progress={60}
+                    icon={Users}
+                />
+                <StatCard
+                    title="Activity"
+                    value={stats.recentActivity}
+                    hint="Actions today"
+                    delta={{ value: '3 pending', tone: 'neutral' }}
+                    progress={45}
+                    icon={Activity}
+                />
             </div>
 
             {/* Quick Actions */}
@@ -195,57 +224,34 @@ export default function DashboardPage() {
                     </Button>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
-                    <Card className="cursor-pointer hover:shadow-sm transition-shadow">
-                        <CardHeader>
-                            <div className="flex items-center space-x-2">
-                                <Globe className="h-5 w-5 text-muted-foreground" />
-                                <CardTitle className="text-base">Manage Sites</CardTitle>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <CardDescription>Add or configure WordPress sites</CardDescription>
-                            <Badge variant="secondary" className="mt-2">5 sites</Badge>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="cursor-pointer hover:shadow-sm transition-shadow">
-                        <CardHeader>
-                            <div className="flex items-center space-x-2">
-                                <Search className="h-5 w-5 text-muted-foreground" />
-                                <CardTitle className="text-base">View Keywords</CardTitle>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <CardDescription>Track and manage keywords</CardDescription>
-                            <Badge variant="secondary" className="mt-2">24 active</Badge>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="cursor-pointer hover:shadow-sm transition-shadow">
-                        <CardHeader>
-                            <div className="flex items-center space-x-2">
-                                <FileText className="h-5 w-5 text-muted-foreground" />
-                                <CardTitle className="text-base">Content Queue</CardTitle>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <CardDescription>Review and approve content</CardDescription>
-                            <Badge variant="secondary" className="mt-2">8 pending</Badge>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="cursor-pointer hover:shadow-sm transition-shadow">
-                        <CardHeader>
-                            <div className="flex items-center space-x-2">
-                                <Users className="h-5 w-5 text-muted-foreground" />
-                                <CardTitle className="text-base">User Management</CardTitle>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <CardDescription>Manage users and permissions</CardDescription>
-                            <Badge variant="secondary" className="mt-2">12 users</Badge>
-                        </CardContent>
-                    </Card>
+                    <QuickAction
+                        title="Manage Sites"
+                        description="Add or configure WordPress sites"
+                        icon={<Globe className="h-5 w-5 text-muted-foreground" />}
+                        href="/sites"
+                        badge="5 sites"
+                    />
+                    <QuickAction
+                        title="View Keywords"
+                        description="Track and manage keywords"
+                        icon={<Search className="h-5 w-5 text-muted-foreground" />}
+                        href="/keywords"
+                        badge="24 active"
+                    />
+                    <QuickAction
+                        title="Content Queue"
+                        description="Review and approve content"
+                        icon={<FileText className="h-5 w-5 text-muted-foreground" />}
+                        href="/content-queue"
+                        badge="8 pending"
+                    />
+                    <QuickAction
+                        title="User Management"
+                        description="Manage users and permissions"
+                        icon={<Users className="h-5 w-5 text-muted-foreground" />}
+                        href="/users"
+                        badge="12 users"
+                    />
                 </div>
             </div>
 
@@ -258,42 +264,9 @@ export default function DashboardPage() {
                         View All
                     </Button>
                 </div>
-                <Card>
-                    <CardContent className="p-6">
-                        <div className="space-y-4">
-                            <div className="flex items-center space-x-4">
-                                <div className="h-2 w-2 rounded-full bg-green-500" />
-                                <div className="flex-1 space-y-1">
-                                    <p className="text-sm font-medium">Content published successfully</p>
-                                    <p className="text-sm text-muted-foreground">
-                                        New blog post "SEO Best Practices 2024" was published to example.com
-                                    </p>
-                                </div>
-                                <div className="text-sm text-muted-foreground">2 minutes ago</div>
-                            </div>
-                            <div className="flex items-center space-x-4">
-                                <div className="h-2 w-2 rounded-full bg-yellow-500" />
-                                <div className="flex-1 space-y-1">
-                                    <p className="text-sm font-medium">New content pending review</p>
-                                    <p className="text-sm text-muted-foreground">
-                                        Article "Keyword Research Guide" is waiting for approval
-                                    </p>
-                                </div>
-                                <div className="text-sm text-muted-foreground">15 minutes ago</div>
-                            </div>
-                            <div className="flex items-center space-x-4">
-                                <div className="h-2 w-2 rounded-full bg-blue-500" />
-                                <div className="flex-1 space-y-1">
-                                    <p className="text-sm font-medium">New user registered</p>
-                                    <p className="text-sm text-muted-foreground">
-                                        User mike@example.com joined the platform
-                                    </p>
-                                </div>
-                                <div className="text-sm text-muted-foreground">1 hour ago</div>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                <div className="max-h-72 overflow-auto">
+                    <ActivityTable rows={recentActivity} />
+                </div>
             </div>
 
             {/* Performance Overview */}
@@ -301,7 +274,9 @@ export default function DashboardPage() {
                 <Card>
                     <CardHeader>
                         <div className="flex items-center space-x-2">
-                            <TrendingUp className="h-5 w-5 text-muted-foreground" />
+                            <div className="p-2 rounded-lg bg-muted">
+                                <TrendingUp className="h-5 w-5 text-muted-foreground" />
+                            </div>
                             <div>
                                 <CardTitle className="text-lg">Performance</CardTitle>
                                 <CardDescription>Key metrics overview</CardDescription>
@@ -319,13 +294,13 @@ export default function DashboardPage() {
                             <span className="text-sm font-medium text-muted-foreground">
                                 Site Performance
                             </span>
-                            <span className="text-sm font-bold text-green-600">Excellent</span>
+                            <span className="text-sm font-bold text-green-600 dark:text-green-400">Excellent</span>
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-sm font-medium text-muted-foreground">
                                 SEO Score
                             </span>
-                            <span className="text-sm font-bold text-blue-600">92/100</span>
+                            <span className="text-sm font-bold text-blue-600 dark:text-blue-400">92/100</span>
                         </div>
                     </CardContent>
                 </Card>
@@ -333,7 +308,9 @@ export default function DashboardPage() {
                 <Card>
                     <CardHeader>
                         <div className="flex items-center space-x-2">
-                            <Zap className="h-5 w-5 text-muted-foreground" />
+                            <div className="p-2 rounded-lg bg-muted">
+                                <Zap className="h-5 w-5 text-muted-foreground" />
+                            </div>
                             <div>
                                 <CardTitle className="text-lg">Automation Status</CardTitle>
                                 <CardDescription>Current automation tasks</CardDescription>

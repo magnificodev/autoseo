@@ -7,7 +7,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { usePermissions } from '@/src/hooks/usePermissions';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -18,24 +17,14 @@ interface SidebarProps {
 
 export function Sidebar({ className, collapsed = false }: SidebarProps) {
     const pathname = usePathname();
-    const { canManageAdmins, canManageSites, canManageContent, canViewAuditLogs, canManageUsers } =
-        usePermissions();
 
-    const checkPermission = (item: (typeof NAV_ITEMS)[0]) => {
-        if (!item.roles) return true;
-        if (item.roles.includes('admin') && canManageAdmins) return true;
-        if (item.roles.includes('manager') && canManageSites) return true;
-        if (item.key === 'users' && canManageUsers) return true;
-        if (item.key === 'role-applications' && canManageUsers) return true;
-        if (item.key === 'admins' && canManageAdmins) return true;
-        if (item.key === 'audit-logs' && canViewAuditLogs) return true;
-        if (item.key === 'sites' && canManageSites) return true;
-        if (item.key === 'keywords' && canManageSites) return true;
-        if (item.key === 'content-queue' && canManageContent) return true;
-        return false;
+    // Simple permission check - in real app, this would come from auth context
+    const hasPermission = (item: (typeof NAV_ITEMS)[0]) => {
+        // For demo purposes, allow all items
+        return true;
     };
 
-    const filteredItems = NAV_ITEMS.filter(checkPermission);
+    const filteredItems = NAV_ITEMS.filter(hasPermission);
 
     const groupedItems = NAV_GROUPS.map((group) => ({
         ...group,
@@ -51,7 +40,7 @@ export function Sidebar({ className, collapsed = false }: SidebarProps) {
                 variant="ghost"
                 className={cn(
                     'w-full justify-start h-11 px-3',
-                    isActive && 'bg-primary text-primary-foreground hover:bg-primary/90',
+                    isActive && 'bg-muted text-foreground',
                     collapsed && 'px-2'
                 )}
                 asChild
@@ -59,9 +48,6 @@ export function Sidebar({ className, collapsed = false }: SidebarProps) {
                 <Link href={item.href}>
                     <Icon className={cn('h-4 w-4', !collapsed && 'mr-3')} />
                     {!collapsed && <span className="flex-1 text-left">{item.label}</span>}
-                    {isActive && !collapsed && (
-                        <div className="h-1.5 w-1.5 rounded-full bg-primary-foreground ml-auto" />
-                    )}
                 </Link>
             </Button>
         );

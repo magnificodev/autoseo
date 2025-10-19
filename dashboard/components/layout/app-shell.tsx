@@ -1,6 +1,5 @@
 'use client';
 
-import Navigation from '@/app/partials/Navigation';
 import { cn } from '@/lib/utils';
 import { ReactNode } from 'react';
 import { MobileNav } from './mobile-nav';
@@ -24,9 +23,7 @@ export function AppShell({ children, title, description, className }: AppShellPr
             <div className="flex flex-1 flex-col overflow-hidden">
                 {/* Topbar */}
                 <Topbar title={title} description={description}>
-                    <MobileNav>
-                        <Navigation />
-                    </MobileNav>
+                    <MobileNav />
                 </Topbar>
 
                 {/* Main Content Area */}
@@ -36,7 +33,9 @@ export function AppShell({ children, title, description, className }: AppShellPr
                         className
                     )}
                 >
-                    <div className="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl">{children}</div>
+                    <div className="container mx-auto p-4 md:p-6 lg:p-8 max-w-[1400px]">
+                        {children}
+                    </div>
                 </main>
             </div>
         </div>

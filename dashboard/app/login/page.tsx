@@ -10,8 +10,8 @@ import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
 
 export default function LoginPage() {
-    const [email, setEmail] = useState('admin@autoseo.com');
-    const [password, setPassword] = useState('admin123');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -55,8 +55,8 @@ export default function LoginPage() {
                 {/* Logo */}
                 <div className="text-center">
                     <div className="flex items-center justify-center space-x-3 mb-4">
-                        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-lg">
-                            <span className="text-white font-bold text-lg">A</span>
+                        <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center">
+                            <span className="text-primary-foreground font-bold text-lg">A</span>
                         </div>
                         <div>
                             <span className="text-2xl font-bold text-foreground">Autoseo</span>
@@ -83,7 +83,7 @@ export default function LoginPage() {
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="admin@autoseo.com"
+                                    placeholder="Enter your email"
                                     disabled={isLoading}
                                 />
                             </div>
@@ -99,7 +99,7 @@ export default function LoginPage() {
                                         required
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        placeholder="admin123"
+                                        placeholder="Enter your password"
                                         disabled={isLoading}
                                     />
                                     <button
@@ -117,12 +117,6 @@ export default function LoginPage() {
                                 </div>
                             </div>
 
-                            {/* Test Account Info */}
-                            <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md p-3">
-                                <p className="text-xs text-blue-700 dark:text-blue-300 text-center">
-                                    <strong>Test Account:</strong> admin@autoseo.com / admin123
-                                </p>
-                            </div>
 
                             {error && (
                                 <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-md text-sm">

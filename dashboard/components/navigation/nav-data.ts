@@ -8,6 +8,7 @@ import {
     Shield,
     UserPlus,
     Users,
+    Settings,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -83,10 +84,18 @@ export const NAV_ITEMS: NavItem[] = [
         roles: ['admin'],
         group: 'Admin',
     },
+    {
+        key: 'settings',
+        label: 'Settings',
+        href: '/settings',
+        icon: Settings,
+        group: 'System',
+    },
 ];
 
 export const NAV_GROUPS = [
     { key: 'overview', label: 'Overview' },
     { key: 'content', label: 'Content' },
     { key: 'admin', label: 'Admin' },
+    { key: 'system', label: 'System' },
 ];
