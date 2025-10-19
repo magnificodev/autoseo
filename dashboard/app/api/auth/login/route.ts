@@ -18,6 +18,9 @@ export async function POST(request: NextRequest) {
         formData.append('scope', '');
         if (remember) formData.append('remember', 'true');
 
+        console.log('Sending to backend:', backendUrl);
+        console.log('Form data:', formData.toString());
+
         const response = await fetch(`${backendUrl}/api/auth/login-cookie`, {
             method: 'POST',
             headers: {
