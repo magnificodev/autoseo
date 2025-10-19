@@ -63,6 +63,19 @@ jobs:
                     sleep 6
                   done
 
+            - name: Clean old deployment on server
+              uses: appleboy/ssh-action@v1.0.3
+              with:
+                  host: ${{ secrets.SSH_HOST }}
+                  username: ${{ secrets.SSH_USER }}
+                  key: ${{ secrets.SSH_KEY }}
+                  port: 22
+                  timeout: 30s
+                  script: |
+                      # Remove old deployment directory to avoid stale files
+                      rm -rf ~/autoseo
+                      mkdir -p ~/autoseo
+
             - name: Upload repository to server
               uses: appleboy/scp-action@v0.1.7
               with:
