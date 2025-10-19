@@ -1,15 +1,20 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('admin@autoseo.com');
     const [password, setPassword] = useState('admin123');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -35,86 +40,126 @@ export default function LoginPage() {
                 router.refresh();
             } else {
                 const errorData = await response.json();
-                setError(errorData.detail || 'Đăng nhập thất bại');
+                setError(errorData.detail || 'Login failed');
             }
         } catch (err) {
-            setError('Lỗi kết nối. Vui lòng thử lại.');
+            setError('Connection error. Please try again.');
         } finally {
             setIsLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-            <div className="max-w-md w-full space-y-8">
-                <div>
-                    <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                        Đăng nhập vào Autoseo
-                    </h2>
-                    <p className="mt-2 text-center text-sm text-gray-600">Quản lý SEO tự động</p>
-                    <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                        <p className="text-xs text-blue-700 text-center">
-                            <strong>Test Account:</strong> admin@autoseo.com / admin123
-                        </p>
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/20 p-4">
+            <div className="w-full max-w-md space-y-6">
+                {/* Logo */}
+                <div className="text-center">
+                    <div className="flex items-center justify-center space-x-3 mb-4">
+                        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-lg">
+                            <span className="text-white font-bold text-lg">A</span>
+                        </div>
+                        <div>
+                            <span className="text-2xl font-bold text-foreground">Autoseo</span>
+                            <p className="text-sm text-muted-foreground">SEO Automation</p>
+                        </div>
                     </div>
                 </div>
-                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                    <div className="space-y-4">
-                        <div>
-                            <label
-                                htmlFor="email"
-                                className="block text-sm font-medium text-gray-700"
-                            >
-                                Email
-                            </label>
-                            <Input
-                                id="email"
-                                name="email"
-                                type="email"
-                                autoComplete="email"
-                                required
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="admin@autoseo.com"
-                            />
+
+                {/* Login Form */}
+                <Card>
+                    <CardHeader className="text-center">
+                        <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
+                        <CardDescription>Sign in to your account to continue</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="email">Email</Label>
+                                <Input
+                                    id="email"
+                                    name="email"
+                                    type="email"
+                                    autoComplete="email"
+                                    required
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="admin@autoseo.com"
+                                    disabled={isLoading}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="password">Password</Label>
+                                <div className="relative">
+                                    <Input
+                                        id="password"
+                                        name="password"
+                                        type={showPassword ? 'text' : 'password'}
+                                        autoComplete="current-password"
+                                        required
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="admin123"
+                                        disabled={isLoading}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute inset-y-0 right-0 pr-3 flex items-center justify-center text-muted-foreground hover:text-foreground"
+                                        disabled={isLoading}
+                                    >
+                                        {showPassword ? (
+                                            <EyeOff className="h-4 w-4" />
+                                        ) : (
+                                            <Eye className="h-4 w-4" />
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Test Account Info */}
+                            <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md p-3">
+                                <p className="text-xs text-blue-700 dark:text-blue-300 text-center">
+                                    <strong>Test Account:</strong> admin@autoseo.com / admin123
+                                </p>
+                            </div>
+
+                            {error && (
+                                <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-md text-sm">
+                                    {error}
+                                </div>
+                            )}
+
+                            <Button type="submit" className="w-full" disabled={isLoading}>
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Signing in...
+                                    </>
+                                ) : (
+                                    'Sign In'
+                                )}
+                            </Button>
+                        </form>
+
+                        <div className="mt-6 text-center">
+                            <p className="text-sm text-muted-foreground">
+                                Don't have an account?{' '}
+                                <Link
+                                    href="/register"
+                                    className="text-primary hover:underline font-medium"
+                                >
+                                    Sign up
+                                </Link>
+                            </p>
                         </div>
-                        <div>
-                            <label
-                                htmlFor="password"
-                                className="block text-sm font-medium text-gray-700"
-                            >
-                                Mật khẩu
-                            </label>
-                            <Input
-                                id="password"
-                                name="password"
-                                type="password"
-                                autoComplete="current-password"
-                                required
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="admin123"
-                            />
-                        </div>
-                    </div>
+                    </CardContent>
+                </Card>
 
-                    {error && <div className="text-red-600 text-sm text-center">{error}</div>}
-
-                    <div>
-                        <Button type="submit" disabled={isLoading} className="w-full">
-                            {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
-                        </Button>
-                    </div>
-
-                    <div className="text-center">
-                        <p className="text-sm text-gray-600">
-                            Chưa có tài khoản?{' '}
-                            <a href="/register" className="font-medium text-blue-600 hover:text-blue-500">
-                                Đăng ký ngay
-                            </a>
-                        </p>
-                    </div>
-                </form>
+                {/* Footer */}
+                <div className="text-center text-sm text-muted-foreground">
+                    <p>© 2024 Autoseo. All rights reserved.</p>
+                </div>
             </div>
         </div>
     );
