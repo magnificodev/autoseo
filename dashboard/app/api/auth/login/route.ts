@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: formData as unknown as any,
+            body: formData.toString(),
         });
 
         if (!response.ok) {
