@@ -14,10 +14,10 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Use external URL for now since internal Docker networking is not working
-        const backendUrl = 'http://40.82.144.18';
-
-        console.log('Backend URL:', backendUrl);
+        // Determine backend URL with fallback logic
+        let backendUrl = process.env.NEXT_PUBLIC_API_BASE || 'http://backend:8000';
+        
+        console.log('Initial Backend URL:', backendUrl);
         console.log('Environment check:', {
             INTERNAL_API_BASE: process.env.INTERNAL_API_BASE,
             NEXT_PUBLIC_API_BASE: process.env.NEXT_PUBLIC_API_BASE,
@@ -25,15 +25,34 @@ export async function POST(request: NextRequest) {
         });
 
         // Test backend connectivity first
+        let healthCheckPassed = false;
         try {
             const healthResponse = await fetch(`${backendUrl}/health`, { method: 'GET' });
             console.log('Backend health check status:', healthResponse.status);
-            if (!healthResponse.ok) {
-                return NextResponse.json({ detail: 'Backend service is not healthy' }, { status: 500 });
+            if (healthResponse.ok) {
+                healthCheckPassed = true;
             }
         } catch (healthError: any) {
             console.error('Backend health check failed:', healthError.message);
-            return NextResponse.json({ detail: `Backend health check failed: ${healthError.message}` }, { status: 500 });
+        }
+
+        // If internal URL failed, try external URL as fallback
+        if (!healthCheckPassed && backendUrl.includes('backend:8000')) {
+            console.log('Internal URL failed, trying external URL...');
+            const externalUrl = 'http://40.82.144.18';
+            try {
+                const externalHealthResponse = await fetch(`${externalUrl}/health`, { method: 'GET' });
+                console.log('External health check status:', externalHealthResponse.status);
+                if (externalHealthResponse.ok) {
+                    backendUrl = externalUrl; // Switch to external URL
+                    console.log(`Switched to external URL: ${backendUrl}`);
+                }
+            } catch (externalError: any) {
+                console.error('External health check also failed:', externalError.message);
+                return NextResponse.json({ detail: 'Backend is not accessible via internal or external URL' }, { status: 500 });
+            }
+        } else if (!healthCheckPassed) {
+            return NextResponse.json({ detail: 'Backend service is not healthy' }, { status: 500 });
         }
 
         // Prefer JSON endpoint when available; fall back to form-encoded cookie login
