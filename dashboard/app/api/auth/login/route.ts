@@ -40,11 +40,11 @@ export async function POST(request: NextRequest) {
         // Get the cookie from backend response and forward it to frontend
         const setCookieHeader = response.headers.get('set-cookie');
         const nextResponse = NextResponse.json({ success: true, remember: Boolean(remember) });
-        
+
         if (setCookieHeader) {
             nextResponse.headers.set('set-cookie', setCookieHeader);
         }
-        
+
         return nextResponse;
     } catch (error) {
         console.error('Login error:', error);
