@@ -16,17 +16,28 @@ export async function POST(request: NextRequest) {
             process.env.INTERNAL_API_BASE ||
             process.env.NEXT_PUBLIC_API_BASE ||
             'http://backend:8000';
+        
+        console.log('Backend URL:', backendUrl);
+        console.log('Environment check:', {
+            INTERNAL_API_BASE: process.env.INTERNAL_API_BASE,
+            NEXT_PUBLIC_API_BASE: process.env.NEXT_PUBLIC_API_BASE,
+            NODE_ENV: process.env.NODE_ENV
+        });
 
         // Prefer JSON endpoint when available; fall back to form-encoded cookie login
         // Try JSON endpoint first
+        console.log('Attempting JSON login to:', `${backendUrl}/api/auth/login-json`);
         let backendResponse = await fetch(`${backendUrl}/api/auth/login-json`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password, remember: Boolean(remember) }),
         });
+        
+        console.log('JSON login response status:', backendResponse.status);
 
         // If JSON endpoint not found, fallback to cookie endpoint (form-encoded)
         if (backendResponse.status === 404) {
+            console.log('JSON endpoint not found, trying form-encoded login to:', `${backendUrl}/api/auth/login`);
             const formData = new URLSearchParams();
             formData.append('grant_type', 'password');
             formData.append('username', email);
@@ -39,6 +50,7 @@ export async function POST(request: NextRequest) {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: formData.toString(),
             });
+            console.log('Form login response status:', backendResponse.status);
         }
 
         if (!backendResponse.ok) {
