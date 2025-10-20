@@ -101,58 +101,6 @@ def register(
         raise HTTPException(status_code=500, detail=f"register_failed: {e}")
 
 
-@router.post("/login")
-async def login(
-    request: Request,
-    form_data: OAuth2PasswordRequestForm = Depends(), 
-    db: Session = Depends(get_db)
-):
-    # Debug logging
-    print(f"LOGIN endpoint - Request content type: {request.headers.get('content-type')}")
-    print(f"LOGIN endpoint - Request method: {request.method}")
-    
-    # Try to obtain credentials from OAuth2 form first; fallback to raw form or JSON for robustness
-    username = form_data.username if getattr(form_data, "username", None) else None
-    password = form_data.password if getattr(form_data, "password", None) else None
-    
-    print(f"LOGIN endpoint - OAuth2 form - username: {username}, password: {'***' if password else None}")
-    
-    if not username or not password:
-        # Fallback: parse form manually
-        try:
-            form = await request.form()
-            print(f"LOGIN endpoint - Raw form data: {dict(form)}")
-            username = username or form.get("username") or form.get("email")
-            password = password or form.get("password")
-        except Exception as e:
-            print(f"LOGIN endpoint - Form parsing error: {e}")
-            pass
-    if not username or not password:
-        # Fallback: parse JSON
-        try:
-            data = await request.json()
-            print(f"LOGIN endpoint - JSON data: {data}")
-            username = username or data.get("username") or data.get("email")
-            password = password or data.get("password")
-        except Exception as e:
-            print(f"LOGIN endpoint - JSON parsing error: {e}")
-            pass
-
-    print(f"LOGIN endpoint - Final - username: {username}, password: {'***' if password else None}")
-
-    if not username or not password:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Missing username/password",
-        )
-
-    user = db.query(User).filter(User.email == username).first()
-    if not user or not verify_password(password, user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Sai thông tin đăng nhập"
-        )
-    token = create_access_token({"sub": str(user.id)})
-    return {"access_token": token, "token_type": "bearer"}
 
 
 class CreateAdminRequest(BaseModel):
@@ -283,8 +231,8 @@ def create_admin_user(request: CreateAdminRequest, db: Session = Depends(get_db)
     return {"message": "Admin user created successfully", "user_id": admin_user.id}
 
 
-@router.post("/login-cookie")
-async def login_cookie(
+@router.post("/login")
+async def login(
     request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     remember: bool = Form(False),

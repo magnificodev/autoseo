@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
         console.log('Sending to backend:', backendUrl);
         console.log('Form data:', formData.toString());
 
-        const response = await fetch(`${backendUrl}/api/auth/login-cookie`, {
+        const response = await fetch(`${backendUrl}/api/auth/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
