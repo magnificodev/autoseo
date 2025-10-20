@@ -14,8 +14,8 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Try different backend URLs to test connectivity
-        const backendUrl = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
+        // Use external URL since internal Docker networking is not working
+        const backendUrl = 'http://40.82.144.18';
 
         console.log('Backend URL:', backendUrl);
         console.log('Environment check:', {
