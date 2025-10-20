@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
         const formData = new URLSearchParams();
         // OAuth2PasswordRequestForm compatibility
         formData.append('grant_type', 'password');
-        formData.append('username', email);
+        formData.append('username', email); // Use email as username
         formData.append('password', password);
         formData.append('scope', '');
         if (remember) formData.append('remember', 'true');
