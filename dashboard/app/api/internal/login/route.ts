@@ -11,7 +11,11 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ detail: 'Email and password are required' }, { status: 400 });
         }
 
-        const backendUrl = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
+        // Prefer internal API base for server-to-server calls. Fallback to service name.
+        const backendUrl =
+            process.env.INTERNAL_API_BASE ||
+            process.env.NEXT_PUBLIC_API_BASE ||
+            'http://backend:8000';
 
         // Prefer JSON endpoint when available; fall back to form-encoded cookie login
         // Try JSON endpoint first
@@ -75,9 +79,9 @@ export async function POST(request: NextRequest) {
             path: '/',
         });
         return response;
-    } catch (error) {
-        console.error('Login error:', error);
-        return NextResponse.json({ detail: 'Server error' }, { status: 500 });
+        } catch (error: any) {
+        console.error('Login error:', error?.message || error);
+        return NextResponse.json({ detail: error?.message || 'Server error' }, { status: 500 });
     }
 }
 
