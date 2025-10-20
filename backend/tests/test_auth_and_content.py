@@ -9,7 +9,7 @@ def test_register_and_login_and_content_flow(client, sqlite_db):
 
     # login
     r = client.post(
-        "/api/auth/login",
+        "/api/auth/login-token",
         data={"username": "t1@example.com", "password": "123456"},
         headers={"Content-Type": "application/x-www-form-urlencoded"},
     )

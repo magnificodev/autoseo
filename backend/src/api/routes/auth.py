@@ -301,15 +301,7 @@ async def login(
     )
     token = create_access_token({"sub": str(user.id)}, expires_delta=expires_delta)
 
-    # Check if this is an API request (no cookie expected) or web request (cookie expected)
-    accept_header = request.headers.get("accept", "")
-    user_agent = request.headers.get("user-agent", "")
-
-    # If it's a test client or API request, return JSON
-    if "application/json" in accept_header or "testclient" in user_agent.lower():
-        return {"access_token": token, "token_type": "bearer"}
-
-    # Otherwise, return cookie for web frontend
+    # Always return cookie for web frontend (Next.js API route will handle JSON conversion)
     from fastapi import Response
 
     resp = Response(content="ok", media_type="text/plain")
@@ -324,6 +316,82 @@ async def login(
         path="/",
     )
     return resp
+
+
+@router.post("/login-token")
+async def login_token(
+    request: Request,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    remember: bool = Form(False),
+    db: Session = Depends(get_db),
+):
+    # Debug logging
+    print(f"LOGIN-TOKEN endpoint - Request content type: {request.headers.get('content-type')}")
+    print(f"LOGIN-TOKEN endpoint - Request method: {request.method}")
+
+    # Try to obtain credentials from OAuth2 form first; fallback to raw form or JSON for robustness
+    username = form_data.username if getattr(form_data, "username", None) else None
+    password = form_data.password if getattr(form_data, "password", None) else None
+
+    print(
+        f"LOGIN-TOKEN endpoint - OAuth2 form - username: {username}, password: {'***' if password else None}"
+    )
+
+    if not username or not password:
+        # Fallback: parse form manually
+        try:
+            form = await request.form()
+            print(f"LOGIN-TOKEN endpoint - Raw form data: {dict(form)}")
+            username = username or form.get("username") or form.get("email")
+            password = password or form.get("password")
+            if "remember" in form:
+                try:
+                    remember = bool(form.get("remember") in (True, "true", "1", 1))
+                except Exception:
+                    pass
+        except Exception as e:
+            print(f"LOGIN-TOKEN endpoint - Form parsing error: {e}")
+            pass
+    if not username or not password:
+        # Fallback: parse JSON
+        try:
+            data = await request.json()
+            print(f"LOGIN-TOKEN endpoint - JSON data: {data}")
+            username = username or data.get("username") or data.get("email")
+            password = password or data.get("password")
+            if "remember" in data:
+                try:
+                    remember = bool(data.get("remember"))
+                except Exception:
+                    pass
+        except Exception as e:
+            print(f"LOGIN-TOKEN endpoint - JSON parsing error: {e}")
+            pass
+
+    print(
+        f"LOGIN-TOKEN endpoint - Final - username: {username}, password: {'***' if password else None}, remember: {remember}"
+    )
+
+    if not username or not password:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Missing username/password",
+        )
+
+    user = db.query(User).filter(User.email == username).first()
+    if not user or not verify_password(password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Sai thông tin đăng nhập"
+        )
+    
+    # Token expiry: extend when remember is true (e.g., 30 days)
+    expires_delta = (
+        timedelta(days=30) if remember else timedelta(minutes=JWT_EXPIRE_MIN)
+    )
+    token = create_access_token({"sub": str(user.id)}, expires_delta=expires_delta)
+    
+    # Always return JSON for API/tests
+    return {"access_token": token, "token_type": "bearer"}
 
 
 @router.get("/me")
