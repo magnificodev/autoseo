@@ -14,8 +14,8 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Use external URL for now to test connectivity
-        const backendUrl = 'http://40.82.144.18';
+        // Try different backend URLs to test connectivity
+        const backendUrl = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
 
         console.log('Backend URL:', backendUrl);
         console.log('Environment check:', {
@@ -27,13 +27,18 @@ export async function POST(request: NextRequest) {
         // Prefer JSON endpoint when available; fall back to form-encoded cookie login
         // Try JSON endpoint first
         console.log('Attempting JSON login to:', `${backendUrl}/api/auth/login-json`);
-        let backendResponse = await fetch(`${backendUrl}/api/auth/login-json`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password, remember: Boolean(remember) }),
-        });
-
-        console.log('JSON login response status:', backendResponse.status);
+        let backendResponse;
+        try {
+            backendResponse = await fetch(`${backendUrl}/api/auth/login-json`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password, remember: Boolean(remember) }),
+            });
+            console.log('JSON login response status:', backendResponse.status);
+        } catch (fetchError: any) {
+            console.error('JSON login fetch error:', fetchError.message);
+            return NextResponse.json({ detail: `Backend connection failed: ${fetchError.message}` }, { status: 500 });
+        }
 
         // If JSON endpoint not found, fallback to cookie endpoint (form-encoded)
         if (backendResponse.status === 404) {
