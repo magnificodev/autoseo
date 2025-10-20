@@ -14,82 +14,61 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Determine backend URL with fallback logic
-        let backendUrl = process.env.NEXT_PUBLIC_API_BASE || 'http://backend:8000';
-        
-        console.log('Initial Backend URL:', backendUrl);
-        console.log('Environment check:', {
-            INTERNAL_API_BASE: process.env.INTERNAL_API_BASE,
-            NEXT_PUBLIC_API_BASE: process.env.NEXT_PUBLIC_API_BASE,
-            NODE_ENV: process.env.NODE_ENV,
-        });
-
-        // Test backend connectivity first
-        let healthCheckPassed = false;
-        try {
-            const healthResponse = await fetch(`${backendUrl}/health`, { method: 'GET' });
-            console.log('Backend health check status:', healthResponse.status);
-            if (healthResponse.ok) {
-                healthCheckPassed = true;
-            }
-        } catch (healthError: any) {
-            console.error('Backend health check failed:', healthError.message);
-        }
-
-        // If internal URL failed, try external URL as fallback
-        if (!healthCheckPassed && backendUrl.includes('backend:8000')) {
-            console.log('Internal URL failed, trying external URL...');
-            const externalUrl = 'http://40.82.144.18';
-            try {
-                const externalHealthResponse = await fetch(`${externalUrl}/health`, { method: 'GET' });
-                console.log('External health check status:', externalHealthResponse.status);
-                if (externalHealthResponse.ok) {
-                    backendUrl = externalUrl; // Switch to external URL
-                    console.log(`Switched to external URL: ${backendUrl}`);
-                }
-            } catch (externalError: any) {
-                console.error('External health check also failed:', externalError.message);
-                return NextResponse.json({ detail: 'Backend is not accessible via internal or external URL' }, { status: 500 });
-            }
-        } else if (!healthCheckPassed) {
-            return NextResponse.json({ detail: 'Backend service is not healthy' }, { status: 500 });
-        }
+        // Xác định danh sách backend ưu tiên (service name trước, external fallback)
+        const candidateBaseUrls = [
+            process.env.NEXT_PUBLIC_API_BASE || 'http://backend:8000',
+            'http://40.82.144.18',
+        ];
 
         // Prefer JSON endpoint when available; fall back to form-encoded cookie login
         // Try JSON endpoint first
-        console.log('Attempting JSON login to:', `${backendUrl}/api/auth/login-json`);
-        let backendResponse;
-        try {
-            backendResponse = await fetch(`${backendUrl}/api/auth/login-json`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password, remember: Boolean(remember) }),
-            });
-            console.log('JSON login response status:', backendResponse.status);
-        } catch (fetchError: any) {
-            console.error('JSON login fetch error:', fetchError.message);
-            return NextResponse.json({ detail: `Backend connection failed: ${fetchError.message}` }, { status: 500 });
+        let backendResponse: Response | null = null;
+        let baseUsed: string | null = null;
+
+        for (const base of candidateBaseUrls) {
+            try {
+                console.log('Attempting JSON login to:', `${base}/api/auth/login-json`);
+                const jsonResp = await fetch(`${base}/api/auth/login-json`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, remember: Boolean(remember) }),
+                });
+                console.log('JSON login response status:', jsonResp.status);
+                if (jsonResp.status !== 404) {
+                    backendResponse = jsonResp;
+                    baseUsed = base;
+                    break;
+                }
+
+                // Fallback form encoded nếu JSON endpoint không có
+                console.log('JSON endpoint not found, trying form login:', `${base}/api/auth/login`);
+                const formData = new URLSearchParams();
+                formData.append('grant_type', 'password');
+                formData.append('username', email);
+                formData.append('password', password);
+                formData.append('scope', '');
+                if (remember) formData.append('remember', 'true');
+
+                const formResp = await fetch(`${base}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString(),
+                });
+                console.log('Form login response status:', formResp.status);
+                backendResponse = formResp;
+                baseUsed = base;
+                break;
+            } catch (e: any) {
+                console.error(`Fetch to ${base} failed:`, e?.message || e);
+                continue; // thử base tiếp theo
+            }
         }
 
-        // If JSON endpoint not found, fallback to cookie endpoint (form-encoded)
-        if (backendResponse.status === 404) {
-            console.log(
-                'JSON endpoint not found, trying form-encoded login to:',
-                `${backendUrl}/api/auth/login`
+        if (!backendResponse) {
+            return NextResponse.json(
+                { detail: 'Không thể kết nối tới backend (cả internal và external)' },
+                { status: 500 }
             );
-            const formData = new URLSearchParams();
-            formData.append('grant_type', 'password');
-            formData.append('username', email);
-            formData.append('password', password);
-            formData.append('scope', '');
-            if (remember) formData.append('remember', 'true');
-
-            backendResponse = await fetch(`${backendUrl}/api/auth/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: formData.toString(),
-            });
-            console.log('Form login response status:', backendResponse.status);
         }
 
         if (!backendResponse.ok) {
