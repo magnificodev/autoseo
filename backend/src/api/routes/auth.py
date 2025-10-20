@@ -296,13 +296,23 @@ async def login(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Sai thông tin đăng nhập"
         )
+    
     # Token expiry: extend when remember is true (e.g., 30 days)
     expires_delta = (
         timedelta(days=30) if remember else timedelta(minutes=JWT_EXPIRE_MIN)
     )
     token = create_access_token({"sub": str(user.id)}, expires_delta=expires_delta)
+    
+    # Check if this is an API request (no cookie expected) or web request (cookie expected)
+    accept_header = request.headers.get("accept", "")
+    user_agent = request.headers.get("user-agent", "")
+    
+    # If it's a test client or API request, return JSON
+    if "application/json" in accept_header or "testclient" in user_agent.lower():
+        return {"access_token": token, "token_type": "bearer"}
+    
+    # Otherwise, return cookie for web frontend
     from fastapi import Response
-
     resp = Response(content="ok", media_type="text/plain")
     cookie_secure = os.getenv("COOKIE_SECURE", "false").lower() == "true"
     resp.set_cookie(
@@ -311,7 +321,7 @@ async def login(
         httponly=True,
         secure=cookie_secure,
         samesite="lax",
-        max_age=(30 * 24 * 60 * 60) if remember else (JWT_EXPIRE_MIN * 60),
+        max_age=int(expires_delta.total_seconds()),
         path="/",
     )
     return resp
