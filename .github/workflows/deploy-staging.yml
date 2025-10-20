@@ -176,7 +176,7 @@ jobs:
                           sleep $((attempt * 10))
                         fi
                       done
-                      
+
                       # Use cache for faster builds, but force rebuild if debugging
                       if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.force_rebuild }}" = "true" ]; then
                         echo "Force rebuild requested - using --no-cache"

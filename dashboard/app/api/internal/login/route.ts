@@ -14,8 +14,8 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Use environment variable for backend URL (set in docker-compose.yml)
-        const backendUrl = process.env.NEXT_PUBLIC_API_BASE || 'http://backend:8000';
+        // Use external URL for now since internal Docker networking is not working
+        const backendUrl = 'http://40.82.144.18';
 
         console.log('Backend URL:', backendUrl);
         console.log('Environment check:', {
