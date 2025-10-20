@@ -248,6 +248,22 @@ async def login(
         f"OAuth2 form - username: {username}, password: {'***' if password else None}"
     )
 
+    # Always try to parse JSON first, then fallback to form
+    if not username or not password:
+        try:
+            data = await request.json()
+            print(f"JSON data: {data}")
+            username = username or data.get("username") or data.get("email")
+            password = password or data.get("password")
+            if "remember" in data:
+                try:
+                    remember = bool(data.get("remember"))
+                except Exception:
+                    pass
+        except Exception as e:
+            print(f"JSON parsing error: {e}")
+            pass
+    
     if not username or not password:
         # Fallback: parse form manually
         try:
@@ -262,21 +278,6 @@ async def login(
                     pass
         except Exception as e:
             print(f"Form parsing error: {e}")
-            pass
-    if not username or not password:
-        # Fallback: parse JSON
-        try:
-            data = await request.json()
-            print(f"JSON data: {data}")
-            username = username or data.get("username") or data.get("email")
-            password = password or data.get("password")
-            if "remember" in data:
-                try:
-                    remember = bool(data.get("remember"))
-                except Exception:
-                    pass
-        except Exception as e:
-            print(f"JSON parsing error: {e}")
             pass
 
     print(
