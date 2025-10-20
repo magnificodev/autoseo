@@ -8,25 +8,22 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ detail: 'Email và mật khẩu là bắt buộc' }, { status: 400 });
         }
 
-        // Forward to backend API using form data
+        // Forward to backend API using JSON data
         const backendUrl = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
-        const formData = new URLSearchParams();
-        // OAuth2PasswordRequestForm compatibility
-        formData.append('grant_type', 'password');
-        formData.append('username', email); // Use email as username
-        formData.append('password', password);
-        formData.append('scope', '');
-        if (remember) formData.append('remember', 'true');
-
+        
         console.log('Sending to backend:', backendUrl);
-        console.log('Form data:', formData.toString());
+        console.log('JSON data:', { email, password, remember });
 
-        const response = await fetch(`${backendUrl}/api/auth/login`, {
+        const response = await fetch(`${backendUrl}/api/auth/login-json`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
+                'Content-Type': 'application/json',
             },
-            body: formData.toString(),
+            body: JSON.stringify({
+                email,
+                password,
+                remember,
+            }),
         });
 
         if (!response.ok) {
@@ -37,14 +34,19 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Get the cookie from backend response and forward it to frontend
-        const setCookieHeader = response.headers.get('set-cookie');
+        // Backend returns JSON with access_token, we need to set cookie for frontend
+        const data = await response.json();
         const nextResponse = NextResponse.json({ success: true, remember: Boolean(remember) });
-
-        if (setCookieHeader) {
-            nextResponse.headers.set('set-cookie', setCookieHeader);
-        }
-
+        
+        // Set cookie with the token from backend
+        nextResponse.cookies.set('token', data.access_token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: remember ? 30 * 24 * 60 * 60 : 60 * 60, // 30 days or 1 hour
+            path: '/',
+        });
+        
         return nextResponse;
     } catch (error) {
         console.error('Login error:', error);

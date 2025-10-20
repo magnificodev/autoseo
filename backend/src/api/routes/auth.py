@@ -325,7 +325,9 @@ async def login_json(
     db: Session = Depends(get_db),
 ):
     # Debug logging
-    print(f"LOGIN-JSON endpoint - Request content type: {request.headers.get('content-type')}")
+    print(
+        f"LOGIN-JSON endpoint - Request content type: {request.headers.get('content-type')}"
+    )
     print(f"LOGIN-JSON endpoint - Request method: {request.method}")
 
     # Parse JSON data
@@ -357,13 +359,13 @@ async def login_json(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Sai thông tin đăng nhập"
         )
-    
+
     # Token expiry: extend when remember is true (e.g., 30 days)
     expires_delta = (
         timedelta(days=30) if remember else timedelta(minutes=JWT_EXPIRE_MIN)
     )
     token = create_access_token({"sub": str(user.id)}, expires_delta=expires_delta)
-    
+
     # Always return JSON for API/tests
     return {"access_token": token, "token_type": "bearer"}
 
