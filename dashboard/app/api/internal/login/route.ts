@@ -8,20 +8,20 @@ export async function POST(request: NextRequest) {
         const { email, password, remember } = await request.json();
 
         if (!email || !password) {
-            return NextResponse.json({ detail: 'Email and password are required' }, { status: 400 });
+            return NextResponse.json(
+                { detail: 'Email and password are required' },
+                { status: 400 }
+            );
         }
 
-        // Prefer internal API base for server-to-server calls. Fallback to service name.
-        const backendUrl =
-            process.env.INTERNAL_API_BASE ||
-            process.env.NEXT_PUBLIC_API_BASE ||
-            'http://backend:8000';
-        
+        // Use external URL for now to test connectivity
+        const backendUrl = 'http://40.82.144.18';
+
         console.log('Backend URL:', backendUrl);
         console.log('Environment check:', {
             INTERNAL_API_BASE: process.env.INTERNAL_API_BASE,
             NEXT_PUBLIC_API_BASE: process.env.NEXT_PUBLIC_API_BASE,
-            NODE_ENV: process.env.NODE_ENV
+            NODE_ENV: process.env.NODE_ENV,
         });
 
         // Prefer JSON endpoint when available; fall back to form-encoded cookie login
@@ -32,12 +32,15 @@ export async function POST(request: NextRequest) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password, remember: Boolean(remember) }),
         });
-        
+
         console.log('JSON login response status:', backendResponse.status);
 
         // If JSON endpoint not found, fallback to cookie endpoint (form-encoded)
         if (backendResponse.status === 404) {
-            console.log('JSON endpoint not found, trying form-encoded login to:', `${backendUrl}/api/auth/login`);
+            console.log(
+                'JSON endpoint not found, trying form-encoded login to:',
+                `${backendUrl}/api/auth/login`
+            );
             const formData = new URLSearchParams();
             formData.append('grant_type', 'password');
             formData.append('username', email);
@@ -91,10 +94,8 @@ export async function POST(request: NextRequest) {
             path: '/',
         });
         return response;
-        } catch (error: any) {
+    } catch (error: any) {
         console.error('Login error:', error?.message || error);
         return NextResponse.json({ detail: error?.message || 'Server error' }, { status: 500 });
     }
 }
-
-
