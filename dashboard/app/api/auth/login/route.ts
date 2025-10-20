@@ -37,8 +37,15 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Backend sets cookie, just return success
-        return NextResponse.json({ success: true, remember: Boolean(remember) });
+        // Get the cookie from backend response and forward it to frontend
+        const setCookieHeader = response.headers.get('set-cookie');
+        const nextResponse = NextResponse.json({ success: true, remember: Boolean(remember) });
+        
+        if (setCookieHeader) {
+            nextResponse.headers.set('set-cookie', setCookieHeader);
+        }
+        
+        return nextResponse;
     } catch (error) {
         console.error('Login error:', error);
         return NextResponse.json({ detail: 'Lỗi server' }, { status: 500 });
