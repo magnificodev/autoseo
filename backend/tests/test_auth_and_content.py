@@ -7,14 +7,14 @@ def test_register_and_login_and_content_flow(client, sqlite_db):
     )
     assert r.status_code == 200
 
-    # login
+    # login (get cookie)
     r = client.post(
-        "/api/auth/login-token",
+        "/api/auth/login",
         data={"username": "t1@example.com", "password": "123456"},
         headers={"Content-Type": "application/x-www-form-urlencoded"},
     )
     assert r.status_code == 200
-    token = r.json()["access_token"]
+    # use cookie for authenticated requests via TestClient session
 
     # Upgrade user to manager role (bypass permission check for test)
     from src.database.models import Role, User
@@ -39,7 +39,6 @@ def test_register_and_login_and_content_flow(client, sqlite_db):
             "wp_username": "u",
             "wp_password_enc": "p",
         },
-        headers={"Authorization": f"Bearer {token}"},
     )
     assert r.status_code == 200
 
@@ -47,6 +46,5 @@ def test_register_and_login_and_content_flow(client, sqlite_db):
     r = client.post(
         "/api/content-queue/",
         json={"site_id": 1, "title": "Bài viết mẫu", "body": "Nội dung"},
-        headers={"Authorization": f"Bearer {token}"},
     )
     assert r.status_code == 200, r.text
