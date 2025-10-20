@@ -263,7 +263,7 @@ async def login(
         except Exception as e:
             print(f"JSON parsing error: {e}")
             pass
-    
+
     if not username or not password:
         # Fallback: parse form manually
         try:
@@ -317,6 +317,55 @@ async def login(
         path="/",
     )
     return resp
+
+
+@router.post("/login-json")
+async def login_json(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    # Debug logging
+    print(f"LOGIN-JSON endpoint - Request content type: {request.headers.get('content-type')}")
+    print(f"LOGIN-JSON endpoint - Request method: {request.method}")
+
+    # Parse JSON data
+    try:
+        data = await request.json()
+        print(f"LOGIN-JSON endpoint - JSON data: {data}")
+        username = data.get("username") or data.get("email")
+        password = data.get("password")
+        remember = bool(data.get("remember", False))
+    except Exception as e:
+        print(f"LOGIN-JSON endpoint - JSON parsing error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Invalid JSON data",
+        )
+
+    print(
+        f"LOGIN-JSON endpoint - Final - username: {username}, password: {'***' if password else None}, remember: {remember}"
+    )
+
+    if not username or not password:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Missing username/password",
+        )
+
+    user = db.query(User).filter(User.email == username).first()
+    if not user or not verify_password(password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Sai thông tin đăng nhập"
+        )
+    
+    # Token expiry: extend when remember is true (e.g., 30 days)
+    expires_delta = (
+        timedelta(days=30) if remember else timedelta(minutes=JWT_EXPIRE_MIN)
+    )
+    token = create_access_token({"sub": str(user.id)}, expires_delta=expires_delta)
+    
+    # Always return JSON for API/tests
+    return {"access_token": token, "token_type": "bearer"}
 
 
 @router.post("/login-token")
