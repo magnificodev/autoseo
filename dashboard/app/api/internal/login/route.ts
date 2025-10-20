@@ -83,6 +83,7 @@ export async function POST(request: NextRequest) {
         const setCookieHeader = backendResponse.headers.get('set-cookie');
         if (setCookieHeader) {
             const res = NextResponse.json({ success: true, remember: Boolean(remember) });
+            // Forward nguyên header Set-Cookie từ backend
             res.headers.set('set-cookie', setCookieHeader);
             return res;
         }
@@ -101,9 +102,14 @@ export async function POST(request: NextRequest) {
         }
 
         const response = NextResponse.json({ success: true, remember: Boolean(remember) });
+        // Xác định secure theo giao thức thực tế (HTTP trên staging) hoặc biến môi trường
+        const forwardedProto = request.headers.get('x-forwarded-proto');
+        const isHttps = forwardedProto === 'https' || request.nextUrl.protocol === 'https:';
+        const secureFlag = (process.env.COOKIE_SECURE || '').toLowerCase() === 'true' ? true : isHttps;
+
         response.cookies.set('token', token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            secure: secureFlag, // tránh Secure cookie trên HTTP
             sameSite: 'lax',
             maxAge: remember ? 30 * 24 * 60 * 60 : 60 * 60, // 30 days or 1 hour
             path: '/',
