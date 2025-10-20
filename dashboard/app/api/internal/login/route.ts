@@ -14,8 +14,8 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Use external URL since internal Docker networking is not working
-        const backendUrl = 'http://40.82.144.18';
+        // Use environment variable for backend URL (set in docker-compose.yml)
+        const backendUrl = process.env.NEXT_PUBLIC_API_BASE || 'http://backend:8000';
 
         console.log('Backend URL:', backendUrl);
         console.log('Environment check:', {
@@ -23,6 +23,18 @@ export async function POST(request: NextRequest) {
             NEXT_PUBLIC_API_BASE: process.env.NEXT_PUBLIC_API_BASE,
             NODE_ENV: process.env.NODE_ENV,
         });
+
+        // Test backend connectivity first
+        try {
+            const healthResponse = await fetch(`${backendUrl}/health`, { method: 'GET' });
+            console.log('Backend health check status:', healthResponse.status);
+            if (!healthResponse.ok) {
+                return NextResponse.json({ detail: 'Backend service is not healthy' }, { status: 500 });
+            }
+        } catch (healthError: any) {
+            console.error('Backend health check failed:', healthError.message);
+            return NextResponse.json({ detail: `Backend health check failed: ${healthError.message}` }, { status: 500 });
+        }
 
         // Prefer JSON endpoint when available; fall back to form-encoded cookie login
         // Try JSON endpoint first
